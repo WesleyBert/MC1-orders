@@ -1,6 +1,9 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging.Abstractions;
 using Orders.Application.Orders;
+using Orders.Application.Orders.Contracts;
+using Orders.Application.Orders.Persistence;
+using Orders.Application.Orders.Validators;
 using Orders.Domain.Common;
 using Orders.Domain.Orders;
 using Orders.Infrastructure.Orders;

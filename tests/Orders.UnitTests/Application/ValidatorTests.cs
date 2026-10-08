@@ -1,4 +1,5 @@
-using Orders.Application.Orders;
+using Orders.Application.Orders.Contracts;
+using Orders.Application.Orders.Validators;
 
 namespace Orders.UnitTests.Application;
 

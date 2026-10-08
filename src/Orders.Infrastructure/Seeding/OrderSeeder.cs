@@ -3,7 +3,7 @@ using Bogus;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Orders.Application.Orders;
+using Orders.Application.Orders.Persistence;
 using Orders.Domain.Orders;
 
 namespace Orders.Infrastructure.Seeding;

@@ -14,13 +14,3 @@ public sealed class SeedOptions
 
     public int RandomSeed { get; init; } = 42;
 }
-
-/// <summary>Sinaliza ao health check de prontidão que a carga inicial terminou.</summary>
-public sealed class SeedStatus
-{
-    private volatile bool _completed;
-
-    public bool IsCompleted => _completed;
-
-    internal void MarkCompleted() => _completed = true;
-}

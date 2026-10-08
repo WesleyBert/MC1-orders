@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
-using Orders.Application.Orders;
+using Orders.Application.Common;
+using Orders.Application.Orders.Persistence;
 using Orders.Domain.Orders;
 
 namespace Orders.Infrastructure.Orders;

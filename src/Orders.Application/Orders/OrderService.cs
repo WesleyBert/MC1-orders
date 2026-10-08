@@ -1,5 +1,8 @@
 using FluentValidation;
 using Microsoft.Extensions.Logging;
+using Orders.Application.Common;
+using Orders.Application.Orders.Contracts;
+using Orders.Application.Orders.Persistence;
 using Orders.Domain.Common;
 using Orders.Domain.Orders;
 

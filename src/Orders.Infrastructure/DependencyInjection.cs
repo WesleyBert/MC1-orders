@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Orders.Application.Orders;
+using Orders.Application.Orders.Persistence;
 using Orders.Infrastructure.Orders;
 using Orders.Infrastructure.Seeding;
 

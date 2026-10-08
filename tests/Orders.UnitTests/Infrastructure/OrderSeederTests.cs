@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
-using Orders.Application.Orders;
+using Orders.Application.Orders.Contracts;
+using Orders.Application.Orders.Validators;
 using Orders.Domain.Orders;
 using Orders.Infrastructure.Orders;
 using Orders.Infrastructure.Seeding;

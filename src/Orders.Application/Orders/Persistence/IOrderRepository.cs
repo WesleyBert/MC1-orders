@@ -1,6 +1,7 @@
+using Orders.Application.Common;
 using Orders.Domain.Orders;
 
-namespace Orders.Application.Orders;
+namespace Orders.Application.Orders.Persistence;
 
 /// <summary>
 /// Persistência de pedidos. As escritas são compare-and-swap: só têm efeito se o pedido armazenado
@@ -24,23 +25,3 @@ public interface IOrderRepository
 
     Task<PagedResult<Order>> ListAsync(OrderListCriteria criteria, CancellationToken cancellationToken);
 }
-
-public enum OrderSortField
-{
-    CreatedAt,
-    Number,
-    CustomerName,
-    TotalAmount,
-    Status,
-}
-
-/// <summary>Critérios de listagem já validados e convertidos para tipos do domínio.</summary>
-public sealed record OrderListCriteria(
-    string? Search,
-    OrderStatus? Status,
-    int Page,
-    int PageSize,
-    OrderSortField SortBy,
-    bool Descending);
-
-public sealed record PagedResult<T>(IReadOnlyList<T> Items, int TotalItems);
