@@ -1,5 +1,6 @@
 using Orders.Domain.Common;
-using Orders.Domain.Orders;
+using Orders.Domain.Entities;
+using Orders.Domain.Enums;
 
 namespace Orders.UnitTests.Domain;
 
@@ -11,12 +12,17 @@ public sealed class OrderTests
     private static Order NewOrder() =>
         Order.Create(10001, "Maria Souza", "Reposição de gôndola", 1520.50m, CreatedAt);
 
-    private static Order InStatus(OrderStatus status) =>
-        status == OrderStatus.Open
-            ? NewOrder()
-            : NewOrder().Update("Maria Souza", "Reposição de gôndola", 1520.50m, status, Later).Value;
+    private static Order InStatus(OrderStatus status)
+    {
+        var order = NewOrder();
+        if (status != OrderStatus.Open)
+        {
+            order.Update("Maria Souza", "Reposição de gôndola", 1520.50m, status, Later);
+        }
 
-    // T1
+        return order;
+    }
+
     [Fact]
     public void Create_StartsOpenWithVersionOneAndServerFields()
     {
@@ -32,7 +38,6 @@ public sealed class OrderTests
         order.Description.Should().Be("Reposição de gôndola");
     }
 
-    // T2
     [Fact]
     public void Update_OpenOrder_ChangesFieldsAndIncrementsVersion()
     {
@@ -41,35 +46,34 @@ public sealed class OrderTests
         var result = order.Update("João Conceição", "Pedido mensal", 99.90m, OrderStatus.Open, Later);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeEquivalentTo(new
+        order.Should().BeEquivalentTo(new
         {
-            order.Id,
-            order.Number,
+            Number = 10001L,
             CustomerName = "João Conceição",
             Description = "Pedido mensal",
             TotalAmount = 99.90m,
             Status = OrderStatus.Open,
-            order.CreatedAt,
+            CreatedAt,
             UpdatedAt = Later,
             Version = 2L,
         });
     }
 
-    // T3, T4
     [Theory]
     [InlineData(OrderStatus.Paid)]
     [InlineData(OrderStatus.Cancelled)]
     public void Update_OpenOrder_CanMoveToFinalStatus(OrderStatus target)
     {
-        var result = NewOrder().Update("Maria Souza", "Reposição de gôndola", 1520.50m, target, Later);
+        var order = NewOrder();
+
+        var result = order.Update("Maria Souza", "Reposição de gôndola", 1520.50m, target, Later);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.Status.Should().Be(target);
-        result.Value.Version.Should().Be(2);
-        result.Value.IsFinal.Should().BeTrue();
+        order.Status.Should().Be(target);
+        order.Version.Should().Be(2);
+        order.IsFinal.Should().BeTrue();
     }
 
-    // T5, T6
     [Theory]
     [InlineData(OrderStatus.Paid, OrderStatus.Open, "Pago")]
     [InlineData(OrderStatus.Paid, OrderStatus.Paid, "Pago")]
@@ -77,7 +81,7 @@ public sealed class OrderTests
     [InlineData(OrderStatus.Cancelled, OrderStatus.Open, "Cancelado")]
     [InlineData(OrderStatus.Cancelled, OrderStatus.Paid, "Cancelado")]
     [InlineData(OrderStatus.Cancelled, OrderStatus.Cancelled, "Cancelado")]
-    public void Update_FinalOrder_FailsWithImmutableStateAndKeepsOriginal(
+    public void Update_FinalOrder_FailsWithImmutableStateAndKeepsState(
         OrderStatus current, OrderStatus target, string label)
     {
         var order = InStatus(current);
@@ -88,11 +92,32 @@ public sealed class OrderTests
         result.Error!.Code.Should().Be("order.immutable_state");
         result.Error.Type.Should().Be(ErrorType.Conflict);
         result.Error.Message.Should().Be($"Pedidos com status {label} não podem ser alterados.");
-        order.Status.Should().Be(current, "o pedido original é imutável");
-        order.Version.Should().Be(2);
+        order.Should().BeEquivalentTo(new
+        {
+            Status = current,
+            CustomerName = "Maria Souza",
+            TotalAmount = 1520.50m,
+            UpdatedAt = Later,
+            Version = 2L,
+        });
     }
 
-    // T7, T8, T9
+    [Fact]
+    public void Update_InvalidInput_ThrowsAndLeavesOrderUntouched()
+    {
+        var order = NewOrder();
+
+        var act = () => order.Update("Novo nome", "Nova descrição", 0m, OrderStatus.Paid, Later);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+        order.Should().BeEquivalentTo(new
+        {
+            CustomerName = "Maria Souza",
+            Status = OrderStatus.Open,
+            Version = 1L,
+        });
+    }
+
     [Theory]
     [InlineData(OrderStatus.Open, true)]
     [InlineData(OrderStatus.Cancelled, true)]
@@ -109,16 +134,44 @@ public sealed class OrderTests
     }
 
     [Fact]
+    public void Restore_RebuildsOrderWithoutChangingState()
+    {
+        var id = Guid.CreateVersion7(CreatedAt);
+
+        var order = Order.Restore(id, 10500, "Ana", "Pedido", 10m, OrderStatus.Paid, CreatedAt, Later, 4);
+
+        order.Should().BeEquivalentTo(new
+        {
+            Id = id,
+            Number = 10500L,
+            Status = OrderStatus.Paid,
+            UpdatedAt = Later,
+            Version = 4L,
+        });
+    }
+
+    [Fact]
+    public void Equality_IsBasedOnIdentity()
+    {
+        var order = NewOrder();
+        var sameIdentity = Order.Restore(
+            order.Id, order.Number, "Outro", "Outra descrição", 1m, OrderStatus.Paid, CreatedAt, Later, 9);
+
+        sameIdentity.Should().Be(order);
+        (sameIdentity == order).Should().BeTrue();
+        NewOrder().Should().NotBe(order);
+    }
+
+    [Fact]
     public void Value_OnFailure_Throws()
     {
-        var result = InStatus(OrderStatus.Paid).Update("Maria Souza", "Reposição", 1m, OrderStatus.Open, Later);
+        Result<int> result = InStatus(OrderStatus.Paid).EnsureCanDelete().Error!;
 
         var act = () => result.Value;
 
         act.Should().Throw<InvalidOperationException>();
     }
 
-    // Invariantes: a validação amigável é da aplicação; o domínio rejeita entradas inválidas.
     [Theory]
     [InlineData("A", "Descrição válida", 10)]
     [InlineData("   ", "Descrição válida", 10)]

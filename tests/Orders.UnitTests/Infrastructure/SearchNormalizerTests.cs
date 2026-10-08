@@ -1,4 +1,4 @@
-using Orders.Infrastructure.Orders;
+using Orders.Infrastructure.Persistence;
 
 namespace Orders.UnitTests.Infrastructure;
 

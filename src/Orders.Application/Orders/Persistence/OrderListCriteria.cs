@@ -1,8 +1,7 @@
-using Orders.Domain.Orders;
+using Orders.Domain.Enums;
 
 namespace Orders.Application.Orders.Persistence;
 
-/// <summary>Critérios de listagem já validados e convertidos para tipos do domínio.</summary>
 public sealed record OrderListCriteria(
     string? Search,
     OrderStatus? Status,

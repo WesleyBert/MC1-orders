@@ -10,5 +10,4 @@ app.MapControllers();
 
 app.Run();
 
-/// <summary>Exposto para <c>WebApplicationFactory</c> nos testes de integração.</summary>
 public partial class Program;

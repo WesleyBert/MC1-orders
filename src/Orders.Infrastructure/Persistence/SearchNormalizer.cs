@@ -1,19 +1,14 @@
 using System.Globalization;
 using System.Text;
 
-namespace Orders.Infrastructure.Orders;
+namespace Orders.Infrastructure.Persistence;
 
-/// <summary>
-/// Normaliza texto para busca: minúsculas e sem acentos ("João" → "joao").
-/// Aplicado tanto ao termo buscado quanto à chave pré-calculada de cada pedido.
-/// </summary>
 public static class SearchNormalizer
 {
     public static string Normalize(string value)
     {
         ArgumentNullException.ThrowIfNull(value);
 
-        // FormD separa "ã" em "a" + til combinante; os combinantes são descartados.
         var decomposed = value.Trim().Normalize(NormalizationForm.FormD);
         var builder = new StringBuilder(decomposed.Length);
 

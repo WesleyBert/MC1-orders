@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Orders.Domain.Common;
 
-/// <summary>Resultado de uma operação que pode falhar por regra de negócio.</summary>
 public class Result
 {
     protected Result(Error? error) => Error = error;

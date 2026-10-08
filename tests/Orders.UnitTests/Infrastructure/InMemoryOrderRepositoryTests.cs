@@ -1,7 +1,8 @@
 using Orders.Application.Common;
 using Orders.Application.Orders.Persistence;
-using Orders.Domain.Orders;
-using Orders.Infrastructure.Orders;
+using Orders.Domain.Entities;
+using Orders.Domain.Enums;
+using Orders.Infrastructure.Persistence;
 
 namespace Orders.UnitTests.Infrastructure;
 
@@ -18,7 +19,7 @@ public sealed class InMemoryOrderRepositoryTests
         var order = Order.Create(_repository.NextNumber(), customer, description, amount, T0.AddMinutes(minutes));
         if (status != OrderStatus.Open)
         {
-            order = order.Update(customer, description, amount, status, T0.AddMinutes(minutes + 1)).Value;
+            order.Update(customer, description, amount, status, T0.AddMinutes(minutes + 1));
         }
 
         await _repository.AddAsync(order, default);
@@ -38,11 +39,26 @@ public sealed class InMemoryOrderRepositoryTests
     }
 
     [Fact]
-    public async Task Add_ThenGet_ReturnsSameOrder()
+    public async Task Get_ReturnsEquivalentCopyNotTheStoredInstance()
     {
         var order = await AddAsync();
 
-        (await _repository.GetAsync(order.Id, default)).Should().BeSameAs(order);
+        var first = await _repository.GetAsync(order.Id, default);
+        var second = await _repository.GetAsync(order.Id, default);
+
+        first.Should().BeEquivalentTo(order);
+        first.Should().NotBeSameAs(second);
+    }
+
+    [Fact]
+    public async Task ChangingLoadedEntity_DoesNotAffectStoreUntilSaved()
+    {
+        var order = await AddAsync();
+        var loaded = (await _repository.GetAsync(order.Id, default))!;
+
+        loaded.Update("Outro", "Outra descrição", 5m, OrderStatus.Paid, T0);
+
+        (await _repository.GetAsync(order.Id, default))!.Status.Should().Be(OrderStatus.Open);
     }
 
     [Fact]
@@ -56,38 +72,43 @@ public sealed class InMemoryOrderRepositoryTests
     }
 
     [Fact]
-    public async Task TryUpdate_FromCurrentVersion_Succeeds()
+    public async Task TryUpdate_WithExpectedVersion_Succeeds()
     {
-        var v1 = await AddAsync();
-        var v2 = v1.Update("Outro", "Outra descrição", 5m, OrderStatus.Open, T0).Value;
+        var order = await AddAsync();
+        var loaded = (await _repository.GetAsync(order.Id, default))!;
+        loaded.Update("Outro", "Outra descrição", 5m, OrderStatus.Open, T0);
 
-        (await _repository.TryUpdateAsync(v1, v2, default)).Should().BeTrue();
-        (await _repository.GetAsync(v1.Id, default)).Should().BeSameAs(v2);
+        (await _repository.TryUpdateAsync(loaded, expectedVersion: 1, default)).Should().BeTrue();
+        (await _repository.GetAsync(order.Id, default)).Should().BeEquivalentTo(new { CustomerName = "Outro", Version = 2L });
     }
 
     [Fact]
-    public async Task TryUpdate_FromStaleVersion_FailsAndKeepsStored()
+    public async Task TryUpdate_WithStaleVersion_FailsAndKeepsStored()
     {
-        var v1 = await AddAsync();
-        var v2 = v1.Update("Outro", "Outra descrição", 5m, OrderStatus.Open, T0).Value;
-        await _repository.TryUpdateAsync(v1, v2, default);
+        var order = await AddAsync();
+        var first = (await _repository.GetAsync(order.Id, default))!;
+        var second = (await _repository.GetAsync(order.Id, default))!;
 
-        var lostUpdate = v1.Update("Atrasado", "Escrita atrasada", 9m, OrderStatus.Open, T0).Value;
+        first.Update("Primeiro", "Primeira escrita", 5m, OrderStatus.Open, T0);
+        await _repository.TryUpdateAsync(first, expectedVersion: 1, default);
 
-        (await _repository.TryUpdateAsync(v1, lostUpdate, default)).Should().BeFalse();
-        (await _repository.GetAsync(v1.Id, default)).Should().BeSameAs(v2);
+        second.Update("Segundo", "Escrita atrasada", 9m, OrderStatus.Open, T0);
+
+        (await _repository.TryUpdateAsync(second, expectedVersion: 1, default)).Should().BeFalse();
+        (await _repository.GetAsync(order.Id, default))!.CustomerName.Should().Be("Primeiro");
     }
 
     [Fact]
-    public async Task TryRemove_OnlyWhenStoredIsCurrent()
+    public async Task TryRemove_OnlyWithCurrentVersion()
     {
-        var v1 = await AddAsync();
-        var v2 = v1.Update("Outro", "Outra descrição", 5m, OrderStatus.Open, T0).Value;
-        await _repository.TryUpdateAsync(v1, v2, default);
+        var order = await AddAsync();
+        var loaded = (await _repository.GetAsync(order.Id, default))!;
+        loaded.Update("Outro", "Outra descrição", 5m, OrderStatus.Open, T0);
+        await _repository.TryUpdateAsync(loaded, expectedVersion: 1, default);
 
-        (await _repository.TryRemoveAsync(v1, default)).Should().BeFalse("v1 já foi substituído");
-        (await _repository.TryRemoveAsync(v2, default)).Should().BeTrue();
-        (await _repository.GetAsync(v1.Id, default)).Should().BeNull();
+        (await _repository.TryRemoveAsync(order.Id, expectedVersion: 1, default)).Should().BeFalse();
+        (await _repository.TryRemoveAsync(order.Id, expectedVersion: 2, default)).Should().BeTrue();
+        (await _repository.GetAsync(order.Id, default)).Should().BeNull();
     }
 
     [Fact]
@@ -121,8 +142,10 @@ public sealed class InMemoryOrderRepositoryTests
     [Fact]
     public async Task List_SearchAfterUpdate_UsesNewText()
     {
-        var v1 = await AddAsync(customer: "Maria Souza");
-        await _repository.TryUpdateAsync(v1, v1.Update("Ana Lima", "Pedido mensal", 5m, OrderStatus.Open, T0).Value, default);
+        var order = await AddAsync(customer: "Maria Souza");
+        var loaded = (await _repository.GetAsync(order.Id, default))!;
+        loaded.Update("Ana Lima", "Pedido mensal", 5m, OrderStatus.Open, T0);
+        await _repository.TryUpdateAsync(loaded, expectedVersion: 1, default);
 
         (await ListAsync(search: "maria")).TotalItems.Should().Be(0);
         (await ListAsync(search: "ana")).TotalItems.Should().Be(1);

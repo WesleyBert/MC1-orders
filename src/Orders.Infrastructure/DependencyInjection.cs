@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Orders.Application.Orders.Persistence;
-using Orders.Infrastructure.Orders;
+using Orders.Infrastructure.Persistence;
 using Orders.Infrastructure.Seeding;
 
 namespace Orders.Infrastructure;
@@ -15,7 +15,6 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        // Singleton: o "banco" é o próprio processo.
         services.AddSingleton<InMemoryOrderRepository>();
         services.AddSingleton<IOrderRepository>(sp => sp.GetRequiredService<InMemoryOrderRepository>());
         services.AddSingleton<SeedStatus>();

@@ -5,19 +5,18 @@ using Orders.Application.Orders.Contracts;
 using Orders.Application.Orders.Persistence;
 using Orders.Application.Orders.Validators;
 using Orders.Domain.Common;
-using Orders.Domain.Orders;
-using Orders.Infrastructure.Orders;
+using Orders.Domain.Enums;
+using Orders.Domain.Errors;
+using Orders.Infrastructure.Persistence;
 using Orders.Infrastructure.Seeding;
 
 namespace Orders.UnitTests.Infrastructure;
 
-/// <summary>
-/// Concorrência real: muitas tarefas em paralelo contra o repositório em memória e o serviço,
-/// sem simulação. Cada cenário é repetido para aumentar a chance de expor corridas.
-/// </summary>
 public sealed class ConcurrencyTests
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 8, 12, 0, 0, TimeSpan.Zero);
+
+    private static readonly ParallelOptions Parallelism = new() { MaxDegreeOfParallelism = Environment.ProcessorCount * 4 };
 
     private readonly InMemoryOrderRepository _repository = new();
     private readonly OrderService _service;
@@ -32,8 +31,6 @@ public sealed class ConcurrencyTests
             TimeProvider.System,
             NullLogger<OrderService>.Instance);
     }
-
-    private static readonly ParallelOptions Parallelism = new() { MaxDegreeOfParallelism = Environment.ProcessorCount * 4 };
 
     private async Task<OrderResponse> CreateAsync() =>
         (await _service.CreateAsync(new CreateOrderRequest("Maria Souza", "Reposição de gôndola", 100m), default)).Value;
@@ -59,7 +56,6 @@ public sealed class ConcurrencyTests
         created.Should().BeEquivalentTo(Enumerable.Range(20_001, 1_000).Select(n => (long)n));
     }
 
-    // T10: Pay ∥ Cancel no mesmo pedido Open, sem If-Match. Exatamente um vence.
     [Fact]
     public async Task ConflictingTransitions_ExactlyOneWins()
     {
@@ -95,8 +91,6 @@ public sealed class ConcurrencyTests
         (await _repository.GetAsync(order.Id, default))!.Version.Should().Be(2);
     }
 
-    // Sem If-Match, cada edição é reaplicada sobre a última versão: nenhuma se perde
-    // (a não ser que a contenção persista por 3 tentativas, o que vira 409 explícito).
     [Fact]
     public async Task ParallelUpdates_WithoutIfMatch_NoSilentLostUpdates()
     {

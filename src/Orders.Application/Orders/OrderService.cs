@@ -4,11 +4,12 @@ using Orders.Application.Common;
 using Orders.Application.Orders.Contracts;
 using Orders.Application.Orders.Persistence;
 using Orders.Domain.Common;
-using Orders.Domain.Orders;
+using Orders.Domain.Entities;
+using Orders.Domain.Enums;
+using Orders.Domain.Errors;
 
 namespace Orders.Application.Orders;
 
-/// <summary>Casos de uso de pedidos.</summary>
 public sealed partial class OrderService(
     IOrderRepository repository,
     IValidator<CreateOrderRequest> createValidator,
@@ -17,7 +18,6 @@ public sealed partial class OrderService(
     TimeProvider timeProvider,
     ILogger<OrderService> logger)
 {
-    /// <summary>Tentativas de compare-and-swap antes de desistir por contenção.</summary>
     internal const int MaxWriteAttempts = 3;
 
     public async Task<Result<OrderResponse>> CreateAsync(CreateOrderRequest request, CancellationToken ct)
@@ -67,7 +67,6 @@ public sealed partial class OrderService(
             page.Items.Select(OrderResponse.From).ToList(), query.Page, query.PageSize, page.TotalItems);
     }
 
-    /// <summary>Atualiza o pedido. <c>expectedVersion</c> vem do <c>If-Match</c>; <c>null</c> aplica sobre a versão mais recente.</summary>
     public async Task<Result<OrderResponse>> UpdateAsync(
         Guid id, UpdateOrderRequest request, long? expectedVersion, CancellationToken ct)
     {
@@ -78,24 +77,22 @@ public sealed partial class OrderService(
 
         var status = OrderParsing.ParseStatus(request.Status)!.Value;
 
-        // Lê, aplica a regra e grava só se ninguém alterou no meio (CAS). Em caso de corrida,
-        // relê e reavalia as regras: dois PUTs simultâneos Open→Paid e Open→Cancelled nunca
-        // passam juntos, porque o segundo enxerga o pedido já em estado final.
         for (var attempt = 1; attempt <= MaxWriteAttempts; attempt++)
         {
-            var current = await repository.GetAsync(id, ct);
-            if (current is null)
+            var order = await repository.GetAsync(id, ct);
+            if (order is null)
             {
                 return OrderErrors.NotFound;
             }
 
-            if (expectedVersion is { } expected && expected != current.Version)
+            if (expectedVersion is { } expected && expected != order.Version)
             {
-                LogVersionMismatch(id, expected, current.Version);
+                LogVersionMismatch(id, expected, order.Version);
                 return OrderErrors.VersionMismatch;
             }
 
-            var updated = current.Update(
+            var loadedVersion = order.Version;
+            var updated = order.Update(
                 request.CustomerName!,
                 request.Description!,
                 request.TotalAmount!.Value,
@@ -107,10 +104,10 @@ public sealed partial class OrderService(
                 return updated.Error;
             }
 
-            if (await repository.TryUpdateAsync(current, updated.Value, ct))
+            if (await repository.TryUpdateAsync(order, loadedVersion, ct))
             {
-                LogOrderUpdated(id, updated.Value.Status, updated.Value.Version);
-                return OrderResponse.From(updated.Value);
+                LogOrderUpdated(id, order.Status, order.Version);
+                return OrderResponse.From(order);
             }
         }
 
@@ -118,30 +115,29 @@ public sealed partial class OrderService(
         return OrderErrors.ConcurrencyConflict;
     }
 
-    /// <summary>Exclui o pedido. <c>expectedVersion</c> vem do <c>If-Match</c>; <c>null</c> remove a versão mais recente.</summary>
     public async Task<Result> DeleteAsync(Guid id, long? expectedVersion, CancellationToken ct)
     {
         for (var attempt = 1; attempt <= MaxWriteAttempts; attempt++)
         {
-            var current = await repository.GetAsync(id, ct);
-            if (current is null)
+            var order = await repository.GetAsync(id, ct);
+            if (order is null)
             {
                 return OrderErrors.NotFound;
             }
 
-            if (expectedVersion is { } expected && expected != current.Version)
+            if (expectedVersion is { } expected && expected != order.Version)
             {
-                LogVersionMismatch(id, expected, current.Version);
+                LogVersionMismatch(id, expected, order.Version);
                 return OrderErrors.VersionMismatch;
             }
 
-            var canDelete = current.EnsureCanDelete();
+            var canDelete = order.EnsureCanDelete();
             if (!canDelete.IsSuccess)
             {
                 return canDelete;
             }
 
-            if (await repository.TryRemoveAsync(current, ct))
+            if (await repository.TryRemoveAsync(id, order.Version, ct))
             {
                 LogOrderDeleted(id);
                 return Result.Success();
@@ -167,7 +163,6 @@ public sealed partial class OrderService(
         return Error.Validation(fields);
     }
 
-    // Sem nome do cliente nos logs (dado pessoal).
     [LoggerMessage(Level = LogLevel.Information, Message = "Pedido {OrderId} (#{Number}) criado")]
     private partial void LogOrderCreated(Guid orderId, long number);
 
@@ -180,6 +175,6 @@ public sealed partial class OrderService(
     [LoggerMessage(Level = LogLevel.Warning, Message = "Conflito de versão no pedido {OrderId}: esperada {ExpectedVersion}, atual {CurrentVersion}")]
     private partial void LogVersionMismatch(Guid orderId, long expectedVersion, long currentVersion);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Pedido {OrderId} sob contenção: CAS falhou {Attempts} vezes")]
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Pedido {OrderId} sob contenção: gravação falhou {Attempts} vezes")]
     private partial void LogWriteContention(Guid orderId, int attempts);
 }

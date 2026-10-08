@@ -1,8 +1,9 @@
 using Orders.Domain.Common;
+using Orders.Domain.Enums;
+using Orders.Domain.Rules;
 
-namespace Orders.Domain.Orders;
+namespace Orders.Domain.Errors;
 
-/// <summary>Catálogo de erros de negócio do pedido.</summary>
 public static class OrderErrors
 {
     private const string ConcurrencyMessage =
@@ -14,11 +15,9 @@ public static class OrderErrors
     public static readonly Error DeleteNotAllowed =
         new("order.delete_not_allowed", "Pedidos pagos não podem ser excluídos.", ErrorType.Conflict);
 
-    /// <summary><c>If-Match</c> divergente da versão atual (HTTP 412).</summary>
     public static readonly Error VersionMismatch =
         new("order.concurrency_conflict", ConcurrencyMessage, ErrorType.PreconditionFailed);
 
-    /// <summary>Escrita concorrente persistente mesmo após novas tentativas (HTTP 409).</summary>
     public static readonly Error ConcurrencyConflict =
         new("order.concurrency_conflict", ConcurrencyMessage, ErrorType.Conflict);
 

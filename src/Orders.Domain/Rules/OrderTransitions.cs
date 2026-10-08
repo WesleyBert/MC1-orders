@@ -1,9 +1,7 @@
-namespace Orders.Domain.Orders;
+using Orders.Domain.Enums;
 
-/// <summary>
-/// Máquina de estados do pedido: Open → Paid | Cancelled. Paid e Cancelled são finais.
-/// Única fonte da verdade para transições, edição e exclusão.
-/// </summary>
+namespace Orders.Domain.Rules;
+
 public static class OrderTransitions
 {
     private static readonly Dictionary<OrderStatus, OrderStatus[]> Allowed = new()
@@ -19,10 +17,8 @@ public static class OrderTransitions
 
     public static IReadOnlyList<OrderStatus> AllowedTargets(OrderStatus from) => Allowed[from];
 
-    /// <summary>Pedido pago é registro financeiro e não pode ser excluído.</summary>
     public static bool CanDelete(OrderStatus status) => status != OrderStatus.Paid;
 
-    /// <summary>Rótulo em pt-BR usado nas mensagens de negócio.</summary>
     public static string DisplayName(OrderStatus status) => status switch
     {
         OrderStatus.Open => "Aberto",

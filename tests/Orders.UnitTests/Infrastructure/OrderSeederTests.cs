@@ -3,8 +3,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using Orders.Application.Orders.Contracts;
 using Orders.Application.Orders.Validators;
-using Orders.Domain.Orders;
-using Orders.Infrastructure.Orders;
+using Orders.Domain.Entities;
+using Orders.Domain.Enums;
+using Orders.Infrastructure.Persistence;
 using Orders.Infrastructure.Seeding;
 
 namespace Orders.UnitTests.Infrastructure;

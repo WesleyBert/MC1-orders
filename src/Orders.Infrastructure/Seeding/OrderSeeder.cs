@@ -4,14 +4,11 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orders.Application.Orders.Persistence;
-using Orders.Domain.Orders;
+using Orders.Domain.Entities;
+using Orders.Domain.Enums;
 
 namespace Orders.Infrastructure.Seeding;
 
-/// <summary>
-/// Gera a carga inicial de pedidos. Roda em <see cref="StartAsync"/>, que o host executa
-/// antes de o servidor HTTP aceitar requisições: nenhuma consulta vê a base pela metade.
-/// </summary>
 public sealed partial class OrderSeeder(
     IOrderRepository repository,
     IOptions<SeedOptions> options,
@@ -52,13 +49,8 @@ public sealed partial class OrderSeeder(
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    /// <summary>
-    /// Gera pedidos determinísticos para uma semente. Números são atribuídos em ordem de criação,
-    /// e pedidos finais passam pela máquina de estados do domínio (versão 2), como na vida real.
-    /// </summary>
     public static IEnumerable<Order> Generate(int count, int seed, DateTimeOffset now, Func<long> nextNumber)
     {
-        // Randomizer próprio: não altera o estado global do Bogus (Randomizer.Seed).
         var faker = new Faker("pt_BR") { Random = new Randomizer(seed) };
 
         var drafts = Enumerable.Range(0, count)
@@ -70,9 +62,12 @@ public sealed partial class OrderSeeder(
         {
             var order = Order.Create(nextNumber(), draft.CustomerName, draft.Description, draft.TotalAmount, draft.CreatedAt);
 
-            yield return draft.Status == OrderStatus.Open
-                ? order
-                : order.Update(order.CustomerName, order.Description, order.TotalAmount, draft.Status, draft.UpdatedAt).Value;
+            if (draft.Status != OrderStatus.Open)
+            {
+                order.Update(order.CustomerName, order.Description, order.TotalAmount, draft.Status, draft.UpdatedAt);
+            }
+
+            yield return order;
         }
     }
 

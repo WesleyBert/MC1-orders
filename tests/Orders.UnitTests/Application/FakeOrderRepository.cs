@@ -1,20 +1,15 @@
 using Orders.Application.Common;
 using Orders.Application.Orders.Persistence;
-using Orders.Domain.Orders;
+using Orders.Domain.Entities;
 
 namespace Orders.UnitTests.Application;
 
-/// <summary>
-/// Repositório de teste com mesma semântica de compare-and-swap do real, mais um gancho
-/// <see cref="BeforeWrite"/> para simular, de forma determinística, outro usuário gravando
-/// entre a leitura e a escrita do serviço.
-/// </summary>
 internal sealed class FakeOrderRepository : IOrderRepository
 {
     private readonly Dictionary<Guid, Order> _orders = [];
     private long _lastNumber = 10000;
 
-    public Func<Order, Task>? BeforeWrite { get; set; }
+    public Func<Guid, Task>? BeforeWrite { get; set; }
 
     public int WriteAttempts { get; private set; }
 
@@ -23,47 +18,54 @@ internal sealed class FakeOrderRepository : IOrderRepository
     public long NextNumber() => ++_lastNumber;
 
     public Task<Order?> GetAsync(Guid id, CancellationToken cancellationToken) =>
-        Task.FromResult(_orders.GetValueOrDefault(id));
+        Task.FromResult(_orders.TryGetValue(id, out var order) ? Copy(order) : null);
 
     public Task AddAsync(Order order, CancellationToken cancellationToken)
     {
-        _orders.Add(order.Id, order);
+        _orders.Add(order.Id, Copy(order));
         return Task.CompletedTask;
     }
 
-    /// <summary>Grava direto, como faria uma requisição concorrente.</summary>
-    public void Replace(Order order) => _orders[order.Id] = order;
-
-    public async Task<bool> TryUpdateAsync(Order current, Order updated, CancellationToken cancellationToken)
+    public void ChangeStored(Guid id, Action<Order> change)
     {
-        await SimulateConcurrentWriter(current);
-        if (!_orders.TryGetValue(current.Id, out var stored) || !stored.Equals(current))
+        var order = Copy(_orders[id]);
+        change(order);
+        _orders[id] = order;
+    }
+
+    public async Task<bool> TryUpdateAsync(Order order, long expectedVersion, CancellationToken cancellationToken)
+    {
+        await SimulateConcurrentWriter(order.Id);
+        if (!_orders.TryGetValue(order.Id, out var stored) || stored.Version != expectedVersion)
         {
             return false;
         }
 
-        _orders[current.Id] = updated;
+        _orders[order.Id] = Copy(order);
         return true;
     }
 
-    public async Task<bool> TryRemoveAsync(Order current, CancellationToken cancellationToken)
+    public async Task<bool> TryRemoveAsync(Guid id, long expectedVersion, CancellationToken cancellationToken)
     {
-        await SimulateConcurrentWriter(current);
-        return _orders.TryGetValue(current.Id, out var stored) && stored.Equals(current) && _orders.Remove(current.Id);
+        await SimulateConcurrentWriter(id);
+        return _orders.TryGetValue(id, out var stored) && stored.Version == expectedVersion && _orders.Remove(id);
     }
 
     public Task<PagedResult<Order>> ListAsync(OrderListCriteria criteria, CancellationToken cancellationToken)
     {
         LastCriteria = criteria;
-        return Task.FromResult(new PagedResult<Order>([.. _orders.Values], _orders.Count));
+        return Task.FromResult(new PagedResult<Order>([.. _orders.Values.Select(Copy)], _orders.Count));
     }
 
-    private async Task SimulateConcurrentWriter(Order current)
+    private static Order Copy(Order o) => Order.Restore(
+        o.Id, o.Number, o.CustomerName, o.Description, o.TotalAmount, o.Status, o.CreatedAt, o.UpdatedAt, o.Version);
+
+    private async Task SimulateConcurrentWriter(Guid id)
     {
         WriteAttempts++;
         if (BeforeWrite is not null)
         {
-            await BeforeWrite(current);
+            await BeforeWrite(id);
         }
     }
 }

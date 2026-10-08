@@ -1,9 +1,8 @@
 using FluentValidation;
-using Orders.Domain.Orders;
+using Orders.Domain.Rules;
 
 namespace Orders.Application.Orders.Validators;
 
-/// <summary>Regras compartilhadas entre criação e atualização (limites em <see cref="OrderRules"/>).</summary>
 internal static class OrderRuleExtensions
 {
     public static IRuleBuilderOptions<T, string?> CustomerNameRules<T>(this IRuleBuilder<T, string?> rule) =>

@@ -1,8 +1,8 @@
-using Orders.Domain.Orders;
+using Orders.Domain.Entities;
+using Orders.Domain.Enums;
 
 namespace Orders.Application.Orders.Contracts;
 
-/// <summary>Representação de um pedido na API.</summary>
 public sealed record OrderResponse(
     Guid Id,
     long Number,

@@ -1,6 +1,5 @@
 namespace Orders.Infrastructure.Seeding;
 
-/// <summary>Sinaliza ao health check de prontidão que a carga inicial terminou.</summary>
 public sealed class SeedStatus
 {
     private volatile bool _completed;

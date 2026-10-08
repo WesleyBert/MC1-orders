@@ -5,7 +5,8 @@ using Orders.Application.Orders.Contracts;
 using Orders.Application.Orders.Persistence;
 using Orders.Application.Orders.Validators;
 using Orders.Domain.Common;
-using Orders.Domain.Orders;
+using Orders.Domain.Enums;
+using Orders.Domain.Errors;
 
 namespace Orders.UnitTests.Application;
 
@@ -41,7 +42,27 @@ public sealed class OrderServiceTests
             : (await _service.UpdateAsync(created.Id, Update(status), null, default)).Value;
     }
 
-    // ---- Create ----
+    private void OnFirstWrite(Action<Guid> concurrentWriter)
+    {
+        var fired = false;
+        _repository.BeforeWrite = id =>
+        {
+            if (!fired)
+            {
+                fired = true;
+                concurrentWriter(id);
+            }
+
+            return Task.CompletedTask;
+        };
+    }
+
+    private void PayOnFirstWrite() =>
+        OnFirstWrite(id => _repository.ChangeStored(id, o =>
+            o.Update(o.CustomerName, o.Description, o.TotalAmount, OrderStatus.Paid, Now)));
+
+    private void EditStored(Guid id) =>
+        _repository.ChangeStored(id, o => o.Update("Outro", "Edição concorrente", 1m, OrderStatus.Open, Now));
 
     [Fact]
     public async Task Create_Valid_PersistsOpenOrderWithServerFields()
@@ -71,15 +92,11 @@ public sealed class OrderServiceTests
         _repository.NextNumber().Should().Be(10001, "pedido inválido não consome número");
     }
 
-    // ---- Get ----
-
     [Fact]
     public async Task Get_Missing_ReturnsNotFound()
     {
         (await _service.GetAsync(Guid.NewGuid(), default)).Error.Should().Be(OrderErrors.NotFound);
     }
-
-    // ---- Update ----
 
     [Fact]
     public async Task Update_WithMatchingVersion_AppliesAndBumpsVersion()
@@ -96,6 +113,7 @@ public sealed class OrderServiceTests
             Version = 2L,
             UpdatedAt = Now.AddMinutes(5),
         });
+        (await _repository.GetAsync(order.Id, default))!.Version.Should().Be(2);
     }
 
     [Fact]
@@ -137,7 +155,6 @@ public sealed class OrderServiceTests
         result.Error.Fields.Should().ContainKey("Status");
     }
 
-    // T10: alguém paga o pedido entre a nossa leitura e a nossa escrita (sem If-Match).
     [Fact]
     public async Task Update_ConcurrentPayment_RetriesAndRespectsStateMachine()
     {
@@ -150,7 +167,6 @@ public sealed class OrderServiceTests
         (await _repository.GetAsync(order.Id, default))!.Status.Should().Be(OrderStatus.Paid);
     }
 
-    // Mesma corrida, mas o cliente enviou If-Match: deve receber 412 e não sobrescrever.
     [Fact]
     public async Task Update_ConcurrentPaymentWithIfMatch_ReturnsVersionMismatch()
     {
@@ -162,22 +178,11 @@ public sealed class OrderServiceTests
         result.Error.Should().Be(OrderErrors.VersionMismatch);
     }
 
-    // Corrida sem conflito de regra: a edição concorrente só mudou o valor; nossa escrita é reaplicada.
     [Fact]
     public async Task Update_ConcurrentEditWithoutIfMatch_ReappliesOnLatestVersion()
     {
         var order = await SeedOrderAsync();
-        var fired = false;
-        _repository.BeforeWrite = current =>
-        {
-            if (!fired)
-            {
-                fired = true;
-                _repository.Replace(current.Update("Outro", "Edição concorrente", 1m, OrderStatus.Open, Now).Value);
-            }
-
-            return Task.CompletedTask;
-        };
+        OnFirstWrite(EditStored);
 
         var result = await _service.UpdateAsync(order.Id, Update(amount: 300m), null, default);
 
@@ -190,9 +195,9 @@ public sealed class OrderServiceTests
     public async Task Update_PersistentContention_GivesUpWithConflict()
     {
         var order = await SeedOrderAsync();
-        _repository.BeforeWrite = current =>
+        _repository.BeforeWrite = id =>
         {
-            _repository.Replace(current.Update("Outro", "Edição concorrente", 1m, OrderStatus.Open, Now).Value);
+            EditStored(id);
             return Task.CompletedTask;
         };
 
@@ -202,8 +207,6 @@ public sealed class OrderServiceTests
         result.Error!.Type.Should().Be(ErrorType.Conflict);
         _repository.WriteAttempts.Should().Be(OrderService.MaxWriteAttempts);
     }
-
-    // ---- Delete ----
 
     [Theory]
     [InlineData("Open")]
@@ -241,7 +244,6 @@ public sealed class OrderServiceTests
         (await _service.DeleteAsync(order.Id, expectedVersion: 2, default)).Error.Should().Be(OrderErrors.VersionMismatch);
     }
 
-    // Pedido pago por outra pessoa entre a leitura e a exclusão: não pode ser excluído.
     [Fact]
     public async Task Delete_ConcurrentPayment_ReturnsDeleteNotAllowed()
     {
@@ -251,8 +253,6 @@ public sealed class OrderServiceTests
         (await _service.DeleteAsync(order.Id, null, default)).Error.Should().Be(OrderErrors.DeleteNotAllowed);
         (await _repository.GetAsync(order.Id, default)).Should().NotBeNull();
     }
-
-    // ---- List ----
 
     [Fact]
     public async Task List_Defaults_MapToCreatedAtDescending()
@@ -295,21 +295,5 @@ public sealed class OrderServiceTests
 
         page.TotalItems.Should().Be(3);
         page.TotalPages.Should().Be(2);
-    }
-
-    private void PayOnFirstWrite()
-    {
-        var fired = false;
-        _repository.BeforeWrite = current =>
-        {
-            if (!fired)
-            {
-                fired = true;
-                _repository.Replace(current.Update(
-                    current.CustomerName, current.Description, current.TotalAmount, OrderStatus.Paid, Now).Value);
-            }
-
-            return Task.CompletedTask;
-        };
     }
 }

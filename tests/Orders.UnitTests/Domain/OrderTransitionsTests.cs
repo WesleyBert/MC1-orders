@@ -1,10 +1,10 @@
-using Orders.Domain.Orders;
+using Orders.Domain.Enums;
+using Orders.Domain.Rules;
 
 namespace Orders.UnitTests.Domain;
 
 public sealed class OrderTransitionsTests
 {
-    // Matriz De → Para completa (docs/02, seção 4).
     [Theory]
     [InlineData(OrderStatus.Open, OrderStatus.Open, true)]
     [InlineData(OrderStatus.Open, OrderStatus.Paid, true)]

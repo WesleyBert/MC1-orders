@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Orders.Infrastructure.Seeding;
 
-/// <summary>Configuração da carga inicial (seção <c>Seed</c>; env: <c>Seed__Count</c> etc.).</summary>
 public sealed class SeedOptions
 {
     public const string SectionName = "Seed";

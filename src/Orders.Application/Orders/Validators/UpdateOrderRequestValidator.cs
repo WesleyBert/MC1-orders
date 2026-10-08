@@ -9,7 +9,6 @@ public sealed class UpdateOrderRequestValidator : AbstractValidator<UpdateOrderR
     {
         RuleLevelCascadeMode = CascadeMode.Stop;
 
-        // Valida o texto já aparado: "   " conta como vazio, igual ao que o domínio grava.
         RuleFor(x => OrderRuleExtensions.TrimOrNull(x.CustomerName)).CustomerNameRules()
             .OverridePropertyName(nameof(UpdateOrderRequest.CustomerName));
         RuleFor(x => OrderRuleExtensions.TrimOrNull(x.Description)).DescriptionRules()

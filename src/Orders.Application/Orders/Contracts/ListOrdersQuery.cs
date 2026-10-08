@@ -1,6 +1,5 @@
 namespace Orders.Application.Orders.Contracts;
 
-/// <summary>Parâmetros de <c>GET /api/v1/orders</c>, como chegam da query string.</summary>
 public sealed record ListOrdersQuery
 {
     public const int DefaultPageSize = 20;

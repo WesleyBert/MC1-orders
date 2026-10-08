@@ -1,6 +1,5 @@
-namespace Orders.Domain.Orders;
+namespace Orders.Domain.Rules;
 
-/// <summary>Limites de campos do pedido, compartilhados entre domínio e validadores.</summary>
 public static class OrderRules
 {
     public const int CustomerNameMinLength = 2;
