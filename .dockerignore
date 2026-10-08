@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+**/TestResults/
+.git/
+.github/
+*.md
+!README.md
