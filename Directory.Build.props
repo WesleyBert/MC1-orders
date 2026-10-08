@@ -7,8 +7,9 @@
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- CS1591: documentação XML obrigatória só onde fizer sentido (OpenAPI). -->
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- CS1591: documentação XML obrigatória só onde fizer sentido (OpenAPI).
+         CA1716: alerta sobre palavras reservadas do VB.NET (ex.: Error); projeto é só C#. -->
+    <NoWarn>$(NoWarn);CS1591;CA1716</NoWarn>
     <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
 
