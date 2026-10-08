@@ -1,12 +1,20 @@
+using Orders.Api.Configuration;
+using Orders.Api.Extensions;
+using Orders.Application;
+using Orders.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = ApiOptions.MaxRequestBodyBytes);
+
+builder.Services
+    .AddApplication()
+    .AddInfrastructure(builder.Configuration)
+    .AddApi(builder.Configuration);
 
 var app = builder.Build();
 
-app.MapOpenApi();
-app.MapControllers();
+app.UseApi();
 
 app.Run();
 
