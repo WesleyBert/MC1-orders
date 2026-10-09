@@ -18,6 +18,14 @@ docker compose up --build
 | http://localhost:8080/scalar/v1 | Documentação interativa da API (OpenAPI) |
 | http://localhost:8080/health/ready | Prontidão (responde após a carga inicial) |
 
+Atalho que sobe os containers, espera a aplicação ficar pronta e abre a aplicação e a documentação no navegador:
+
+```bash
+start.cmd
+```
+
+No Linux/macOS: `./start.sh`. Para parar: `docker compose down`.
+
 **Sem Docker (desenvolvimento)** — requer .NET 10 SDK e Node 22:
 
 ```bash
