@@ -22,7 +22,7 @@ export function useOrdersList(params: ListOrdersParams) {
 }
 
 export function useOrdersSummary() {
-  const { data } = useQuery({
+  const { data, isError } = useQuery({
     queryKey: orderKeys.summary(),
     queryFn: ({ signal }) => getOrdersSummary(signal),
     refetchInterval: REFRESH_INTERVAL_MS,
@@ -33,6 +33,7 @@ export function useOrdersSummary() {
     open: data?.open,
     paid: data?.paid,
     cancelled: data?.cancelled,
+    failed: isError && data === undefined,
   }
 }
 

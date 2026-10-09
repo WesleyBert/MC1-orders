@@ -49,10 +49,14 @@ export function OrdersSummary({ status, onStatusChange }: OrdersSummaryProps) {
             </div>
             <div className="min-w-0">
               <p className="truncate text-xs font-medium text-muted-foreground">{card.label}</p>
-              {card.count === undefined ? (
-                <Skeleton className="mt-1 h-6 w-16" />
-              ) : (
+              {card.count !== undefined ? (
                 <p className="text-xl font-semibold tabular-nums">{formatInteger(card.count)}</p>
+              ) : summary.failed ? (
+                <p className="text-xl font-semibold text-muted-foreground" title="Não foi possível carregar o resumo">
+                  —
+                </p>
+              ) : (
+                <Skeleton className="mt-1 h-6 w-16" />
               )}
             </div>
           </button>

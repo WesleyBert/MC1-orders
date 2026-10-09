@@ -38,6 +38,9 @@ export function OrdersPage() {
     sortDir: state.sortDir,
   })
   const data = ordersQuery.data
+  const viewedOrder = orderToView
+    ? (data?.items.find((order) => order.id === orderToView.id) ?? orderToView)
+    : null
 
   useEffect(() => {
     if (data && data.totalPages > 0 && state.page > data.totalPages) {
@@ -141,7 +144,7 @@ export function OrdersPage() {
       </section>
 
       <OrderDetailsDialog
-        order={orderToView}
+        order={viewedOrder}
         onClose={() => setOrderToView(null)}
         onEdit={(order) => {
           setOrderToView(null)
