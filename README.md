@@ -73,7 +73,7 @@ cd web && npm test
 - **Concorrência**: escritas atômicas sem lock global e concorrência otimista com `ETag`/`If-Match`.
 - **Validação** com mensagens em pt-BR por campo, no formato `ProblemDetails` (RFC 9457) com código estável.
 - **Tela** que lista, busca, filtra, ordena, pagina, cria, edita e exclui, atualizando sozinha a cada 10 segundos.
-- **Docker** multi-stage, usuário não-root e healthcheck; **CI** no GitHub Actions; **236 testes** automatizados (178 no .NET e 58 no front).
+- **Docker** multi-stage, usuário não-root e healthcheck; **CI** no GitHub Actions; **239 testes** automatizados (178 no .NET e 61 no front).
 
 ## Arquitetura
 
@@ -114,6 +114,7 @@ web/src/
     components/           Componentes da tela: tabela, toolbar, paginação, diálogos, formulário
     hooks/                Hooks da feature (estado da listagem sincronizado com a URL)
     model/                Tipos, regras de status e schema de validação do formulário
+  components/layout/      Estrutura da página: cabeçalho e área principal (AppShell)
   components/ui/          Componentes base do shadcn/ui, sem regra de negócio
   hooks/                  Hooks genéricos reutilizáveis
   lib/                    Utilitários compartilhados: cliente HTTP, formatação, erros, `cn`
@@ -157,6 +158,10 @@ expõe detalhes internos.
 react-hook-form + zod (mesmas regras da API, e os erros da API aparecem no campo), Tailwind + shadcn/ui.
 O valor é formatado em reais enquanto o usuário digita. Filtros e página ficam na URL. Ao salvar ou excluir, o front envia `If-Match`; em conflito, avisa e
 oferece recarregar sem perder o que foi digitado.
+
+Os cards de resumo (total, abertos, pagos e cancelados) vêm de uma única chamada (`/orders/summary`)
+e também funcionam como atalho de filtro. Clicar numa linha abre os detalhes do pedido, que acompanham a
+atualização da lista enquanto o diálogo está aberto.
 
 **Hospedagem.** O front é servido pela própria API (mesma origem, sem CORS, um único container). Não é
 um BFF: a API é genérica e não há agregação nem autenticação. Se surgir login OAuth ou vários serviços,
