@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { Order, OrderStatus } from '../model/types'
 import { ApiError } from '@/lib/http/client'
@@ -8,7 +8,14 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { formatAmountInput, maskAmountInput } from '@/lib/format'
-import { isOrderFormField, orderFormSchema, type OrderFormValues } from '../model/orderFormSchema'
+import { cn } from '@/lib/utils'
+import {
+  CUSTOMER_NAME_MAX_LENGTH,
+  DESCRIPTION_MAX_LENGTH,
+  isOrderFormField,
+  orderFormSchema,
+  type OrderFormValues,
+} from '../model/orderFormSchema'
 import { allowedTargets, STATUS_LABELS } from '../model/orderStatus'
 
 export const ORDER_FORM_ID = 'order-form'
@@ -56,16 +63,24 @@ export function OrderForm({ order, readOnly, serverError, onSubmit }: OrderFormP
     }
   }, [serverError, setError])
 
+  const customerNameLength = useWatch({ control, name: 'customerName' }).length
+  const descriptionLength = useWatch({ control, name: 'description' }).length
+
   const statusOptions: readonly OrderStatus[] = order ? allowedTargets(order.status) : []
   const statusItems = Object.fromEntries(statusOptions.map((s) => [s, STATUS_LABELS[s]]))
 
   return (
     <form id={ORDER_FORM_ID} noValidate onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-      <Field id="customerName" label="Cliente" error={errors.customerName?.message}>
+      <Field
+        id="customerName"
+        label="Cliente"
+        error={errors.customerName?.message}
+        counter={readOnly ? undefined : { length: customerNameLength, max: CUSTOMER_NAME_MAX_LENGTH }}
+      >
         <Input
           id="customerName"
           autoComplete="off"
-          maxLength={150}
+          maxLength={CUSTOMER_NAME_MAX_LENGTH}
           disabled={readOnly}
           aria-invalid={errors.customerName ? true : undefined}
           aria-describedby={errors.customerName ? 'customerName-error' : undefined}
@@ -73,11 +88,17 @@ export function OrderForm({ order, readOnly, serverError, onSubmit }: OrderFormP
         />
       </Field>
 
-      <Field id="description" label="Descrição" error={errors.description?.message}>
+      <Field
+        id="description"
+        label="Descrição"
+        error={errors.description?.message}
+        counter={readOnly ? undefined : { length: descriptionLength, max: DESCRIPTION_MAX_LENGTH }}
+      >
         <Textarea
           id="description"
           rows={3}
-          maxLength={500}
+          className="max-h-40 overflow-y-auto"
+          maxLength={DESCRIPTION_MAX_LENGTH}
           disabled={readOnly}
           aria-invalid={errors.description ? true : undefined}
           aria-describedby={errors.description ? 'description-error' : undefined}
@@ -153,16 +174,30 @@ function Field({
   id,
   label,
   error,
+  counter,
   children,
 }: {
   id: string
   label: string
   error: string | undefined
+  counter?: { length: number; max: number }
   children: React.ReactNode
 }) {
   return (
     <div className="grid gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id}>{label}</Label>
+        {counter && (
+          <span
+            className={cn(
+              'text-xs text-muted-foreground tabular-nums',
+              counter.length >= counter.max * 0.9 && 'text-destructive',
+            )}
+          >
+            {counter.length}/{counter.max}
+          </span>
+        )}
+      </div>
       {children}
       {error && (
         <p id={`${id}-error`} className="text-sm text-destructive">

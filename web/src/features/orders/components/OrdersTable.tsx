@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatCurrency, formatDateTime, formatOrderNumber } from '@/lib/format'
 import { canDelete, isFinal } from '../model/orderStatus'
+import { CustomerAvatar } from './CustomerAvatar'
 import { SortableHead } from './SortableHead'
 import { StatusBadge } from './StatusBadge'
 
@@ -13,16 +14,12 @@ interface OrdersTableProps {
   sortBy: SortField
   sortDir: SortDirection
   onSort: (field: SortField) => void
+  onView: (order: Order) => void
   onEdit: (order: Order) => void
   onDelete: (order: Order) => void
 }
 
-function initials(name: string) {
-  const words = name.split(/[\s-]+/).filter(Boolean)
-  return ((words[0]?.[0] ?? '') + (words.length > 1 ? (words.at(-1)?.[0] ?? '') : '')).toUpperCase()
-}
-
-export function OrdersTable({ orders, sortBy, sortDir, onSort, onEdit, onDelete }: OrdersTableProps) {
+export function OrdersTable({ orders, sortBy, sortDir, onSort, onView, onEdit, onDelete }: OrdersTableProps) {
   const sortProps = { sortBy, sortDir, onSort }
 
   return (
@@ -40,18 +37,25 @@ export function OrdersTable({ orders, sortBy, sortDir, onSort, onEdit, onDelete 
       </TableHeader>
       <TableBody>
         {orders.map((order) => (
-          <TableRow key={order.id}>
+          <TableRow
+            key={order.id}
+            tabIndex={0}
+            aria-label={`Ver detalhes do pedido ${formatOrderNumber(order.number)}`}
+            className="cursor-pointer focus-visible:bg-muted/50 focus-visible:outline-none"
+            onClick={() => onView(order)}
+            onKeyDown={(event) => {
+              if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault()
+                onView(order)
+              }
+            }}
+          >
             <TableCell className="pl-4 font-mono text-xs font-medium text-muted-foreground">
               {formatOrderNumber(order.number)}
             </TableCell>
             <TableCell className="max-w-56" title={order.customerName}>
               <div className="flex items-center gap-2.5">
-                <span
-                  className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
-                  aria-hidden="true"
-                >
-                  {initials(order.customerName)}
-                </span>
+                <CustomerAvatar name={order.customerName} />
                 <span className="truncate font-medium">{order.customerName}</span>
               </div>
             </TableCell>
@@ -66,7 +70,7 @@ export function OrdersTable({ orders, sortBy, sortDir, onSort, onEdit, onDelete 
               {formatDateTime(order.createdAt)}
             </TableCell>
             <TableCell className="pr-4 text-right">
-              <div className="flex justify-end gap-1">
+              <div className="flex justify-end gap-1" onClick={(event) => event.stopPropagation()}>
                 <Button
                   variant="ghost"
                   size="icon-sm"

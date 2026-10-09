@@ -19,7 +19,7 @@ describe('orderFormSchema', () => {
 
   it.each([
     ['customerName', '   ', 'O nome do cliente é obrigatório.'],
-    ['customerName', 'A', 'O nome do cliente deve ter entre 2 e 150 caracteres.'],
+    ['customerName', 'A', 'O nome do cliente deve ter entre 2 e 15 caracteres.'],
     ['description', '', 'A descrição é obrigatória.'],
     ['description', 'ab', 'A descrição deve ter entre 3 e 500 caracteres.'],
     ['totalAmount', '', 'O valor total é obrigatório.'],

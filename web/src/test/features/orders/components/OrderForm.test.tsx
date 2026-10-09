@@ -30,6 +30,27 @@ function renderForm(props: Partial<React.ComponentProps<typeof OrderForm>> = {})
 }
 
 describe('OrderForm', () => {
+  it('limita o tamanho dos campos de texto e mostra o contador de caracteres', async () => {
+    renderForm()
+    const customerName = screen.getByLabelText('Cliente')
+    const description = screen.getByLabelText('Descrição')
+
+    expect(customerName).toHaveAttribute('maxLength', '15')
+    expect(description).toHaveAttribute('maxLength', '500')
+    expect(screen.getByText('0/15')).toBeInTheDocument()
+
+    await userEvent.type(customerName, 'Maria')
+
+    expect(screen.getByText('5/15')).toBeInTheDocument()
+    expect(screen.getByText('0/500')).toBeInTheDocument()
+  })
+
+  it('não mostra o contador quando o pedido é somente leitura', () => {
+    renderForm({ order: { ...order, status: 'Paid' }, readOnly: true })
+
+    expect(screen.queryByText(/^\d+\/\d+$/)).not.toBeInTheDocument()
+  })
+
   it('mostra os erros de validação e não envia', async () => {
     const { onSubmit } = renderForm()
 
@@ -72,12 +93,12 @@ describe('OrderForm', () => {
   it('exibe abaixo do campo o erro devolvido pela API', async () => {
     const serverError = new ApiError(400, {
       status: 400,
-      errors: { customerName: ['O nome do cliente deve ter entre 2 e 150 caracteres.'] },
+      errors: { customerName: ['O nome do cliente deve ter entre 2 e 15 caracteres.'] },
     })
 
     renderForm({ order, serverError })
 
-    expect(await screen.findByText('O nome do cliente deve ter entre 2 e 150 caracteres.')).toBeInTheDocument()
+    expect(await screen.findByText('O nome do cliente deve ter entre 2 e 15 caracteres.')).toBeInTheDocument()
   })
 
   it('preenche os campos ao editar e bloqueia em modo leitura', () => {

@@ -49,7 +49,7 @@ public sealed class ConcurrencyTests
         var created = new ConcurrentBag<long>();
         await Parallel.ForEachAsync(Enumerable.Range(0, 1_000), Parallelism, async (_, ct) =>
             created.Add((await _service.CreateAsync(
-                new CreateOrderRequest("Cliente Paralelo", "Pedido concorrente", 10m), ct)).Value.Number));
+                new CreateOrderRequest("Cliente Teste", "Pedido concorrente", 10m), ct)).Value.Number));
 
         _repository.Count.Should().Be(11_000);
         created.Should().OnlyHaveUniqueItems();

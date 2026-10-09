@@ -44,12 +44,12 @@ public sealed class OrdersEndpointsTests(OrdersApiFactory factory) : IClassFixtu
     [Fact]
     public async Task List_SearchIgnoresAccents()
     {
-        await CreateAsync("Conceição Integração");
+        await CreateAsync("Conceição Assis");
 
-        var body = await (await _client.GetAsync(Url($"{Orders}?search=conceicao integracao"))).JsonAsync();
+        var body = await (await _client.GetAsync(Url($"{Orders}?search=conceicao assis"))).JsonAsync();
 
         body.GetProperty("items").EnumerateArray()
-            .Should().Contain(o => o.GetProperty("customerName").GetString() == "Conceição Integração");
+            .Should().Contain(o => o.GetProperty("customerName").GetString() == "Conceição Assis");
     }
 
     [Fact]

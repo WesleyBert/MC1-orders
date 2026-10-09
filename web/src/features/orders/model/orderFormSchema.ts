@@ -3,8 +3,11 @@ import { hasAtMostTwoDecimals, parseAmount } from '@/lib/format'
 
 const MAX_AMOUNT = 999_999_999.99
 
-const customerNameLength = 'O nome do cliente deve ter entre 2 e 150 caracteres.'
-const descriptionLength = 'A descrição deve ter entre 3 e 500 caracteres.'
+export const CUSTOMER_NAME_MAX_LENGTH = 15
+export const DESCRIPTION_MAX_LENGTH = 500
+
+const customerNameLength = `O nome do cliente deve ter entre 2 e ${CUSTOMER_NAME_MAX_LENGTH} caracteres.`
+const descriptionLength = `A descrição deve ter entre 3 e ${DESCRIPTION_MAX_LENGTH} caracteres.`
 
 export const orderFormSchema = z.object({
   customerName: z
@@ -12,13 +15,13 @@ export const orderFormSchema = z.object({
     .trim()
     .min(1, 'O nome do cliente é obrigatório.')
     .min(2, customerNameLength)
-    .max(150, customerNameLength),
+    .max(CUSTOMER_NAME_MAX_LENGTH, customerNameLength),
   description: z
     .string()
     .trim()
     .min(1, 'A descrição é obrigatória.')
     .min(3, descriptionLength)
-    .max(500, descriptionLength),
+    .max(DESCRIPTION_MAX_LENGTH, descriptionLength),
   totalAmount: z
     .string()
     .trim()

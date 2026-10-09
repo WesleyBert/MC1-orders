@@ -7,6 +7,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { ORDER_STATUSES, STATUS_LABELS } from '../model/orderStatus'
 
 const ALL = 'all'
+const SEARCH_MAX_LENGTH = 100
 
 const STATUS_FILTER_ITEMS: Record<string, string> = { [ALL]: 'Todos os status', ...STATUS_LABELS }
 
@@ -44,7 +45,7 @@ export function OrdersToolbar({ search, status, onSearchChange, onStatusChange }
           aria-label="Buscar pedidos"
           placeholder="Buscar por número, cliente ou descrição"
           className="h-9 bg-background pl-8"
-          maxLength={100}
+          maxLength={SEARCH_MAX_LENGTH}
           value={term}
           onChange={(event) => setTerm(event.target.value)}
         />

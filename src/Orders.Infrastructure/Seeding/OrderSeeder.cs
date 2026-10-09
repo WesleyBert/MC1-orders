@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Orders.Application.Orders.Persistence;
 using Orders.Domain.Entities;
 using Orders.Domain.Enums;
+using Orders.Domain.Rules;
 
 namespace Orders.Infrastructure.Seeding;
 
@@ -79,12 +80,24 @@ public sealed partial class OrderSeeder(
         var closedAt = createdAt.AddMinutes(f.Random.Int(60, 15 * 24 * 60));
 
         return new Draft(
-            CustomerName: f.Random.Bool() ? f.Name.FullName() : f.Company.CompanyName(),
+            CustomerName: NewCustomerName(f),
             Description: $"{f.PickRandom(Actions)} — {f.PickRandom(Categories)}",
             TotalAmount: Math.Round(f.Random.Decimal(10m, 50_000m), 2),
             Status: status,
             CreatedAt: createdAt,
             UpdatedAt: closedAt < now ? closedAt : now);
+    }
+
+    private static string NewCustomerName(Faker f)
+    {
+        string name;
+        do
+        {
+            name = f.Random.Bool() ? f.Name.FullName() : f.Company.CompanyName();
+        }
+        while (name.Length > OrderRules.CustomerNameMaxLength);
+
+        return name;
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Carga inicial concluída: {Count} pedidos em {ElapsedMs} ms")]

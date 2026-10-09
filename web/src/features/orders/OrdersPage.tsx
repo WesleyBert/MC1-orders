@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { errorMessage } from '@/lib/errors'
 import { DeleteOrderDialog } from './components/DeleteOrderDialog'
+import { OrderDetailsDialog } from './components/OrderDetailsDialog'
 import { OrderFormDialog, type OrderDialogState } from './components/OrderFormDialog'
 import { OrdersPagination } from './components/OrdersPagination'
 import { OrdersSummary } from './components/OrdersSummary'
@@ -26,6 +27,7 @@ export function OrdersPage() {
   const { state, update, reset } = useOrdersUrlState()
   const [dialog, setDialog] = useState<OrderDialogState | null>(null)
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null)
+  const [orderToView, setOrderToView] = useState<Order | null>(null)
 
   const ordersQuery = useOrdersList({
     search: state.search || undefined,
@@ -117,6 +119,7 @@ export function OrdersPage() {
               sortBy={state.sortBy}
               sortDir={state.sortDir}
               onSort={onSort}
+              onView={setOrderToView}
               onEdit={(order) => setDialog({ mode: 'edit', orderId: order.id })}
               onDelete={setOrderToDelete}
             />
@@ -137,6 +140,18 @@ export function OrdersPage() {
         )}
       </section>
 
+      <OrderDetailsDialog
+        order={orderToView}
+        onClose={() => setOrderToView(null)}
+        onEdit={(order) => {
+          setOrderToView(null)
+          setDialog({ mode: 'edit', orderId: order.id })
+        }}
+        onDelete={(order) => {
+          setOrderToView(null)
+          setOrderToDelete(order)
+        }}
+      />
       <OrderFormDialog state={dialog} onClose={() => setDialog(null)} />
       <DeleteOrderDialog order={orderToDelete} onClose={() => setOrderToDelete(null)} />
     </div>
