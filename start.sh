@@ -3,7 +3,7 @@ set -e
 cd "$(dirname "$0")"
 
 APP_URL="http://localhost:8080"
-DOCS_URL="$APP_URL/scalar/v1"
+DOCS_URL="$APP_URL/swagger"
 
 docker compose up --build -d
 

@@ -2,7 +2,7 @@
 Set-Location $PSScriptRoot
 
 $appUrl = 'http://localhost:8080'
-$docsUrl = "$appUrl/scalar/v1"
+$docsUrl = "$appUrl/swagger"
 
 docker compose up --build -d
 if ($LASTEXITCODE -ne 0) {

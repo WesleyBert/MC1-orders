@@ -36,9 +36,14 @@ public sealed class PlatformTests(OrdersApiFactory factory) : IClassFixture<Orde
     }
 
     [Fact]
-    public async Task ScalarUi_IsServed()
+    public async Task SwaggerUi_IsServedAndPointsToOpenApiDocument()
     {
-        (await _client.GetAsync(Url("/scalar/v1"))).StatusCode.Should().Be(HttpStatusCode.OK);
+        var response = await _client.GetAsync(Url("/swagger"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("swagger-ui");
+        (await (await _client.GetAsync(Url("/swagger/index.js"))).Content.ReadAsStringAsync())
+            .Should().Contain("/openapi/v1.json");
     }
 
     [Fact]

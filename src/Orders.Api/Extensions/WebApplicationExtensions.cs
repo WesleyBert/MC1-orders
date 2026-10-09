@@ -4,7 +4,6 @@ using Orders.Api.Configuration;
 using Orders.Api.Health;
 using Orders.Api.Http;
 using Orders.Api.Middleware;
-using Scalar.AspNetCore;
 
 namespace Orders.Api.Extensions;
 
@@ -30,7 +29,11 @@ public static class WebApplicationExtensions
         if (app.Services.GetRequiredService<IOptions<ApiOptions>>().Value.EnableDocs)
         {
             app.MapOpenApi();
-            app.MapScalarApiReference();
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/openapi/v1.json", "MC1 Orders API v1");
+                options.DocumentTitle = "MC1 Orders API";
+            });
         }
 
         app.MapFallbackToFile($"{{*path:{NotApiRouteConstraint.Name}:nonfile}}", "index.html");

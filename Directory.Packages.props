@@ -8,7 +8,7 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.17.14" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.3.0" />
   </ItemGroup>
   <ItemGroup Label="Testes">
     <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />

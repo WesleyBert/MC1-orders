@@ -15,7 +15,7 @@ docker compose up --build
 | URL | O que é |
 |---|---|
 | http://localhost:8080 | Aplicação web |
-| http://localhost:8080/scalar/v1 | Documentação interativa da API (OpenAPI) |
+| http://localhost:8080/swagger | Documentação interativa da API (Swagger UI) |
 | http://localhost:8080/health/ready | Prontidão (responde após a carga inicial) |
 
 **Atalho: sobe tudo e já abre a aplicação e a documentação no navegador**
@@ -56,7 +56,7 @@ cd web && npm test
 | `Seed__Count` | `10000` | Quantidade de pedidos gerados |
 | `Seed__RandomSeed` | `42` | Semente (dados reproduzíveis) |
 | `Seed__Enabled` | `true` | Liga/desliga a carga inicial |
-| `Api__EnableDocs` | `true` | Publica OpenAPI e Scalar |
+| `Api__EnableDocs` | `true` | Publica OpenAPI e Swagger UI |
 
 ## O que foi entregue
 
@@ -145,7 +145,7 @@ binário. Os testes rodam no CI, não no build da imagem, para manter o `docker 
 - Os dados ficam só na memória: reiniciar a aplicação recria a base a partir da carga inicial.
 - Funciona em uma instância só; duas réplicas teriam bases diferentes.
 - Sem autenticação (fora do escopo do desafio).
-- `If-Match` é opcional na API para facilitar testes via curl/Scalar; o front sempre envia.
+- `If-Match` é opcional na API para facilitar testes via curl/Swagger; o front sempre envia.
 - O bundle do front tem cerca de 200 KB gzip, aceitável para backoffice, mas sem divisão por rota.
 
 ## O que eu faria com mais tempo
