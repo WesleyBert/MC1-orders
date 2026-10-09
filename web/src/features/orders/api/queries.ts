@@ -1,5 +1,5 @@
-import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createOrder, deleteOrder, getOrder, listOrders, updateOrder } from './ordersApi'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createOrder, deleteOrder, getOrder, getOrdersSummary, listOrders, updateOrder } from './ordersApi'
 import type { CreateOrderInput, ListOrdersParams, Order, UpdateOrderInput } from '../model/types'
 
 export const REFRESH_INTERVAL_MS = 10_000
@@ -9,6 +9,7 @@ export const orderKeys = {
   lists: () => [...orderKeys.all, 'list'] as const,
   list: (params: ListOrdersParams) => [...orderKeys.lists(), params] as const,
   detail: (id: string) => [...orderKeys.all, 'detail', id] as const,
+  summary: () => [...orderKeys.all, 'summary'] as const,
 }
 
 export function useOrdersList(params: ListOrdersParams) {
@@ -20,23 +21,19 @@ export function useOrdersList(params: ListOrdersParams) {
   })
 }
 
-const SUMMARY_SCOPES = [undefined, 'Open', 'Paid', 'Cancelled'] as const
-
 export function useOrdersSummary() {
-  return useQueries({
-    queries: SUMMARY_SCOPES.map((status) => {
-      const params: ListOrdersParams = { status, page: 1, pageSize: 1, sortBy: 'createdAt', sortDir: 'desc' }
-      return {
-        queryKey: orderKeys.list(params),
-        queryFn: ({ signal }: { signal: AbortSignal }) => listOrders(params, signal),
-        refetchInterval: REFRESH_INTERVAL_MS,
-      }
-    }),
-    combine: (results) => {
-      const [total, open, paid, cancelled] = results.map((result) => result.data?.totalItems)
-      return { total, open, paid, cancelled }
-    },
+  const { data } = useQuery({
+    queryKey: orderKeys.summary(),
+    queryFn: ({ signal }) => getOrdersSummary(signal),
+    refetchInterval: REFRESH_INTERVAL_MS,
   })
+
+  return {
+    total: data?.total,
+    open: data?.open,
+    paid: data?.paid,
+    cancelled: data?.cancelled,
+  }
 }
 
 export function useOrder(id: string | undefined) {
@@ -52,14 +49,20 @@ export function useOrder(id: string | undefined) {
 
 function useOrderCacheSync() {
   const queryClient = useQueryClient()
+  const refreshListAndSummary = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: orderKeys.lists() }),
+      queryClient.invalidateQueries({ queryKey: orderKeys.summary() }),
+    ])
+
   return {
     saved: (order: Order) => {
       queryClient.setQueryData(orderKeys.detail(order.id), order)
-      return queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
+      return refreshListAndSummary()
     },
     removed: (id: string) => {
       queryClient.removeQueries({ queryKey: orderKeys.detail(id) })
-      return queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
+      return refreshListAndSummary()
     },
   }
 }

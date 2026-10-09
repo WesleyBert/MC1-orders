@@ -1,6 +1,7 @@
 using Orders.Application.Common;
 using Orders.Application.Orders.Persistence;
 using Orders.Domain.Entities;
+using Orders.Domain.Enums;
 
 namespace Orders.UnitTests.Application;
 
@@ -56,6 +57,10 @@ internal sealed class FakeOrderRepository : IOrderRepository
         LastCriteria = criteria;
         return Task.FromResult(new PagedResult<Order>([.. _orders.Values.Select(Copy)], _orders.Count));
     }
+
+    public Task<IReadOnlyDictionary<OrderStatus, int>> CountByStatusAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyDictionary<OrderStatus, int>>(
+            _orders.Values.GroupBy(o => o.Status).ToDictionary(g => g.Key, g => g.Count()));
 
     private static Order Copy(Order o) => Order.Restore(
         o.Id, o.Number, o.CustomerName, o.Description, o.TotalAmount, o.Status, o.CreatedAt, o.UpdatedAt, o.Version);

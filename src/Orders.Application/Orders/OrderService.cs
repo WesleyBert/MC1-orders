@@ -46,6 +46,16 @@ public sealed partial class OrderService(
         return order is null ? OrderErrors.NotFound : OrderResponse.From(order);
     }
 
+    public async Task<OrdersSummaryResponse> GetSummaryAsync(CancellationToken ct)
+    {
+        var counts = await repository.CountByStatusAsync(ct);
+        var open = counts.GetValueOrDefault(OrderStatus.Open);
+        var paid = counts.GetValueOrDefault(OrderStatus.Paid);
+        var cancelled = counts.GetValueOrDefault(OrderStatus.Cancelled);
+
+        return new OrdersSummaryResponse(open + paid + cancelled, open, paid, cancelled);
+    }
+
     public async Task<Result<PagedResponse<OrderResponse>>> ListAsync(ListOrdersQuery query, CancellationToken ct)
     {
         if (await ValidateAsync(listValidator, query, ct) is { } invalid)

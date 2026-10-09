@@ -34,3 +34,10 @@ export interface CreateOrderInput {
 export interface UpdateOrderInput extends CreateOrderInput {
   status: OrderStatus
 }
+
+export interface OrdersSummary {
+  total: number
+  open: number
+  paid: number
+  cancelled: number
+}

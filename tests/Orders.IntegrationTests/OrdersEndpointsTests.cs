@@ -276,4 +276,22 @@ public sealed class OrdersEndpointsTests(OrdersApiFactory factory) : IClassFixtu
 
         response.StatusCode.Should().Be(HttpStatusCode.PreconditionFailed);
     }
+
+    [Fact]
+    public async Task Summary_MatchesListTotalsAndFollowsChanges()
+    {
+        var before = await (await _client.GetAsync(Url($"{Orders}/summary"))).JsonAsync();
+        var listed = await (await _client.GetAsync(Url($"{Orders}?status=Open&pageSize=1"))).JsonAsync();
+
+        before.GetProperty("open").GetInt32().Should().Be(listed.GetProperty("totalItems").GetInt32());
+        before.GetProperty("total").GetInt32().Should().Be(
+            before.GetProperty("open").GetInt32() + before.GetProperty("paid").GetInt32() + before.GetProperty("cancelled").GetInt32());
+
+        var created = await CreateAsync();
+        await _client.SendAsync(HttpMethod.Put, $"{Orders}/{IdOf(created)}", UpdateBody("Paid"));
+
+        var after = await (await _client.GetAsync(Url($"{Orders}/summary"))).JsonAsync();
+        after.GetProperty("paid").GetInt32().Should().BeGreaterThan(before.GetProperty("paid").GetInt32());
+        after.GetProperty("total").GetInt32().Should().BeGreaterThan(before.GetProperty("total").GetInt32());
+    }
 }

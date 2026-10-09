@@ -24,6 +24,12 @@ public sealed class OrdersController(OrderService orderService) : ControllerBase
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }
 
+    [HttpGet("summary")]
+    [EndpointSummary("Conta os pedidos por status em uma única chamada")]
+    [ProducesResponseType<OrdersSummaryResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Summary(CancellationToken ct) =>
+        Ok(await orderService.GetSummaryAsync(ct));
+
     [HttpGet("{id:guid}", Name = GetOrderRoute)]
     [EndpointSummary("Obtém um pedido pelo identificador")]
     [ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]

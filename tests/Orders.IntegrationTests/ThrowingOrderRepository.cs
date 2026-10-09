@@ -1,6 +1,7 @@
 using Orders.Application.Common;
 using Orders.Application.Orders.Persistence;
 using Orders.Domain.Entities;
+using Orders.Domain.Enums;
 
 namespace Orders.IntegrationTests;
 
@@ -23,5 +24,8 @@ internal sealed class ThrowingOrderRepository : IOrderRepository
         throw new InvalidOperationException(SecretMessage);
 
     public Task<PagedResult<Order>> ListAsync(OrderListCriteria criteria, CancellationToken cancellationToken) =>
+        throw new InvalidOperationException(SecretMessage);
+
+    public Task<IReadOnlyDictionary<OrderStatus, int>> CountByStatusAsync(CancellationToken cancellationToken) =>
         throw new InvalidOperationException(SecretMessage);
 }

@@ -296,4 +296,23 @@ public sealed class OrderServiceTests
         page.TotalItems.Should().Be(3);
         page.TotalPages.Should().Be(2);
     }
+
+    [Fact]
+    public async Task GetSummary_ReturnsTotalAndCountPerStatus()
+    {
+        await SeedOrderAsync();
+        await SeedOrderAsync();
+        await SeedOrderAsync("Paid");
+        await SeedOrderAsync("Cancelled");
+
+        var summary = await _service.GetSummaryAsync(default);
+
+        summary.Should().Be(new OrdersSummaryResponse(Total: 4, Open: 2, Paid: 1, Cancelled: 1));
+    }
+
+    [Fact]
+    public async Task GetSummary_WithNoOrders_ReturnsZeros()
+    {
+        (await _service.GetSummaryAsync(default)).Should().Be(new OrdersSummaryResponse(0, 0, 0, 0));
+    }
 }

@@ -1,6 +1,6 @@
 import { request, toETag } from '@/lib/http/client'
 import type { PagedResponse } from '@/lib/http/types'
-import type { CreateOrderInput, ListOrdersParams, Order, UpdateOrderInput } from '../model/types'
+import type { CreateOrderInput, ListOrdersParams, Order, OrdersSummary, UpdateOrderInput } from '../model/types'
 
 const BASE = '/api/v1/orders'
 
@@ -19,6 +19,11 @@ export async function listOrders(params: ListOrdersParams, signal?: AbortSignal)
   }
 
   const { data } = await request<PagedResponse<Order>>(`${BASE}?${query}`, { signal })
+  return data
+}
+
+export async function getOrdersSummary(signal?: AbortSignal) {
+  const { data } = await request<OrdersSummary>(`${BASE}/summary`, { signal })
   return data
 }
 

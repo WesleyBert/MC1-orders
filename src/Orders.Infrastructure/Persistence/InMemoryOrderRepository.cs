@@ -3,6 +3,7 @@ using System.Globalization;
 using Orders.Application.Common;
 using Orders.Application.Orders.Persistence;
 using Orders.Domain.Entities;
+using Orders.Domain.Enums;
 
 namespace Orders.Infrastructure.Persistence;
 
@@ -76,6 +77,18 @@ public sealed class InMemoryOrderRepository : IOrderRepository
             .ToList();
 
         return Task.FromResult(new PagedResult<Order>(page, matches.Count));
+    }
+
+    public Task<IReadOnlyDictionary<OrderStatus, int>> CountByStatusAsync(CancellationToken cancellationToken)
+    {
+        var counts = Enum.GetValues<OrderStatus>().ToDictionary(status => status, _ => 0);
+
+        foreach (var record in _orders.Values)
+        {
+            counts[record.Status]++;
+        }
+
+        return Task.FromResult<IReadOnlyDictionary<OrderStatus, int>>(counts);
     }
 
     private static IOrderedEnumerable<OrderRecord> Sort(List<OrderRecord> records, OrderSortField field, bool descending)

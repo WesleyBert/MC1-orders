@@ -210,4 +210,21 @@ public sealed class InMemoryOrderRepositoryTests
 
         result.Items.Select(o => o.CustomerName).Should().Equal("álvaro", "Bruno", "Carla");
     }
+
+    [Fact]
+    public async Task CountByStatus_CountsEveryStatusIncludingZeros()
+    {
+        await AddAsync();
+        await AddAsync();
+        await AddAsync(status: OrderStatus.Paid);
+
+        var counts = await _repository.CountByStatusAsync(default);
+
+        counts.Should().BeEquivalentTo(new Dictionary<OrderStatus, int>
+        {
+            [OrderStatus.Open] = 2,
+            [OrderStatus.Paid] = 1,
+            [OrderStatus.Cancelled] = 0,
+        });
+    }
 }
