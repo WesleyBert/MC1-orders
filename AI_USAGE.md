@@ -48,7 +48,7 @@ fazendo um commit por fase antes de seguir.
 
 ## Como validei
 
-Testes escritos a partir da especificação (174 no .NET e 37 no front), incluindo concorrência real com
+Testes escritos a partir da especificação (178 no .NET e 58 no front), incluindo concorrência real com
 milhares de operações em paralelo, rodados várias vezes para descartar resultado instável. Além disso,
 usei a tela no navegador: editei um pedido enquanto outra requisição o alterava (conflito detectado sem
 perder o que foi digitado), criei pedidos pela API e conferi que apareciam sozinhos em até 10 s, e subi

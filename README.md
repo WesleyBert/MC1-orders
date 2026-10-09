@@ -1,5 +1,7 @@
 # MC1 Orders — Cadastro de Pedidos
 
+[![CI](https://github.com/WesleyBert/MC1-orders/actions/workflows/ci.yml/badge.svg)](https://github.com/WesleyBert/MC1-orders/actions/workflows/ci.yml)
+
 Desafio técnico para Desenvolvedor(a) Web .NET Pleno: API REST em ASP.NET Core (.NET 10), página web em React
 e execução com Docker. Persistência em memória, segura para requisições simultâneas, com 10.000 pedidos
 gerados na inicialização.
@@ -71,7 +73,7 @@ cd web && npm test
 - **Concorrência**: escritas atômicas sem lock global e concorrência otimista com `ETag`/`If-Match`.
 - **Validação** com mensagens em pt-BR por campo, no formato `ProblemDetails` (RFC 9457) com código estável.
 - **Tela** que lista, busca, filtra, ordena, pagina, cria, edita e exclui, atualizando sozinha a cada 10 segundos.
-- **Docker** multi-stage, usuário não-root e healthcheck; **CI** no GitHub Actions; **224 testes** automatizados (174 no .NET e 50 no front).
+- **Docker** multi-stage, usuário não-root e healthcheck; **CI** no GitHub Actions; **236 testes** automatizados (178 no .NET e 58 no front).
 
 ## Arquitetura
 
@@ -97,6 +99,7 @@ Trocar a memória por um banco é escrever outro `IOrderRepository`, sem tocar e
 | POST | `/api/v1/orders` | 201 + `Location` + `ETag` | 400 |
 | PUT | `/api/v1/orders/{id}` (header `If-Match` opcional) | 200 + `ETag` | 400, 404, 409, 412 |
 | DELETE | `/api/v1/orders/{id}` (header `If-Match` opcional) | 204 | 404, 409, 412 |
+| GET | `/api/v1/orders/summary` (total e quantidade por status) | 200 | — |
 
 ### Front-end
 
