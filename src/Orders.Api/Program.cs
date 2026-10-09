@@ -1,7 +1,13 @@
 using Orders.Api.Configuration;
 using Orders.Api.Extensions;
+using Orders.Api.Health;
 using Orders.Application;
 using Orders.Infrastructure;
+
+if (args is [HealthProbe.Argument])
+{
+    return await HealthProbe.RunAsync();
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +22,8 @@ var app = builder.Build();
 
 app.UseApi();
 
-app.Run();
+await app.RunAsync();
+
+return 0;
 
 public partial class Program;

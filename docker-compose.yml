@@ -1,0 +1,12 @@
+name: mc1-orders
+
+services:
+  orders:
+    build: .
+    image: mc1-orders:latest
+    ports:
+      - "8080:8080"
+    environment:
+      Seed__Count: "10000"
+      Api__EnableDocs: "true"
+    restart: unless-stopped

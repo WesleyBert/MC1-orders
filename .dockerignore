@@ -11,3 +11,4 @@
 .github/
 *.md
 !README.md
+src/Orders.Api/wwwroot/
