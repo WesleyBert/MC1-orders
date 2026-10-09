@@ -144,26 +144,32 @@ public sealed class ConcurrencyTests
             await _repository.AddAsync(order, default);
         }
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        const int ReadsPerReader = 200;
         var ids = (await _repository.ListAsync(
             new OrderListCriteria(null, OrderStatus.Open, 1, 100, OrderSortField.Number, false), default)).Items
             .Select(o => o.Id).ToArray();
 
-        var writers = Task.Run(async () =>
+        using var readersDone = new CancellationTokenSource();
+        var firstWrite = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var writes = 0;
+
+        var writer = Task.Run(async () =>
         {
-            var i = 0;
-            while (!cts.IsCancellationRequested)
+            while (!readersDone.IsCancellationRequested)
             {
-                var id = ids[i++ % ids.Length];
-                await _service.UpdateAsync(id, Update("Open", amount: (i % 500) + 1), null, default);
+                var id = ids[writes % ids.Length];
+                await _service.UpdateAsync(id, Update("Open", amount: (writes % 500) + 1), null, default);
                 await _service.CreateAsync(new CreateOrderRequest("Escritor", "Pedido durante leitura", 1m), default);
+                writes++;
+                firstWrite.TrySetResult();
             }
         });
 
+        await firstWrite.Task;
+
         var readers = Enumerable.Range(0, 4).Select(_ => Task.Run(async () =>
         {
-            var reads = 0;
-            while (!cts.IsCancellationRequested)
+            for (var read = 0; read < ReadsPerReader; read++)
             {
                 var page = await _repository.ListAsync(
                     new OrderListCriteria("pedido", null, 1, 100, OrderSortField.CreatedAt, true), default);
@@ -175,13 +181,13 @@ public sealed class ConcurrencyTests
                     o.TotalAmount.Should().BePositive();
                 });
                 page.TotalItems.Should().BeGreaterThanOrEqualTo(page.Items.Count);
-                reads++;
             }
-
-            return reads;
         })).ToArray();
 
-        await writers;
-        (await Task.WhenAll(readers)).Should().AllSatisfy(r => r.Should().BePositive());
+        await Task.WhenAll(readers);
+        await readersDone.CancelAsync();
+        await writer;
+
+        writes.Should().BePositive();
     }
 }
