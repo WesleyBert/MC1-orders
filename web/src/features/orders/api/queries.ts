@@ -1,4 +1,4 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createOrder, deleteOrder, getOrder, listOrders, updateOrder } from './ordersApi'
 import type { CreateOrderInput, ListOrdersParams, Order, UpdateOrderInput } from '../model/types'
 
@@ -17,6 +17,25 @@ export function useOrdersList(params: ListOrdersParams) {
     queryFn: ({ signal }) => listOrders(params, signal),
     placeholderData: keepPreviousData,
     refetchInterval: REFRESH_INTERVAL_MS,
+  })
+}
+
+const SUMMARY_SCOPES = [undefined, 'Open', 'Paid', 'Cancelled'] as const
+
+export function useOrdersSummary() {
+  return useQueries({
+    queries: SUMMARY_SCOPES.map((status) => {
+      const params: ListOrdersParams = { status, page: 1, pageSize: 1, sortBy: 'createdAt', sortDir: 'desc' }
+      return {
+        queryKey: orderKeys.list(params),
+        queryFn: ({ signal }: { signal: AbortSignal }) => listOrders(params, signal),
+        refetchInterval: REFRESH_INTERVAL_MS,
+      }
+    }),
+    combine: (results) => {
+      const [total, open, paid, cancelled] = results.map((result) => result.data?.totalItems)
+      return { total, open, paid, cancelled }
+    },
   })
 }
 

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { PlusIcon, SearchIcon } from 'lucide-react'
+import { SearchIcon } from 'lucide-react'
 import type { OrderStatus } from '../model/types'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
@@ -16,10 +15,9 @@ interface OrdersToolbarProps {
   status: OrderStatus | undefined
   onSearchChange: (search: string) => void
   onStatusChange: (status: OrderStatus | undefined) => void
-  onCreate: () => void
 }
 
-export function OrdersToolbar({ search, status, onSearchChange, onStatusChange, onCreate }: OrdersToolbarProps) {
+export function OrdersToolbar({ search, status, onSearchChange, onStatusChange }: OrdersToolbarProps) {
   const [term, setTerm] = useState(search)
   const [syncedSearch, setSyncedSearch] = useState(search)
   const debouncedTerm = useDebouncedValue(term, 300)
@@ -45,7 +43,7 @@ export function OrdersToolbar({ search, status, onSearchChange, onStatusChange, 
           type="search"
           aria-label="Buscar pedidos"
           placeholder="Buscar por número, cliente ou descrição"
-          className="h-9 pl-8"
+          className="h-9 bg-background pl-8"
           maxLength={100}
           value={term}
           onChange={(event) => setTerm(event.target.value)}
@@ -57,7 +55,7 @@ export function OrdersToolbar({ search, status, onSearchChange, onStatusChange, 
         value={status ?? ALL}
         onValueChange={(value) => onStatusChange(ORDER_STATUSES.find((s) => s === value))}
       >
-        <SelectTrigger aria-label="Filtrar por status" className="h-9 w-full sm:w-44">
+        <SelectTrigger aria-label="Filtrar por status" className="h-9 w-full bg-background sm:w-44">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -69,11 +67,6 @@ export function OrdersToolbar({ search, status, onSearchChange, onStatusChange, 
           ))}
         </SelectContent>
       </Select>
-
-      <Button size="lg" onClick={onCreate}>
-        <PlusIcon data-icon="inline-start" />
-        Novo pedido
-      </Button>
     </div>
   )
 }

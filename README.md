@@ -6,7 +6,20 @@ gerados na inicialização.
 
 ## Como rodar
 
-**Com Docker (um comando):**
+Pré-requisito: Docker (no Windows/macOS, com o Docker Desktop aberto).
+
+**Jeito mais rápido:** na pasta raiz do projeto (`mc1-orders`), rode:
+
+```powershell
+.\start.cmd
+```
+
+No Linux/macOS: `./start.sh`.
+
+O script sobe os containers em segundo plano, espera a API ficar pronta e abre a aplicação e o Swagger no navegador.
+Logs: `docker compose logs -f` · Parar: `docker compose down`.
+
+**Ou, só com Docker:**
 
 ```bash
 docker compose up --build
@@ -17,15 +30,6 @@ docker compose up --build
 | http://localhost:8080 | Aplicação web |
 | http://localhost:8080/swagger | Documentação interativa da API (Swagger UI) |
 | http://localhost:8080/health/ready | Prontidão (responde após a carga inicial) |
-
-**Atalho: sobe tudo e já abre a aplicação e a documentação no navegador**
-
-```bash
-.\start.cmd
-```
-
-No Linux/macOS: `./start.sh`. O terminal fica livre (containers em segundo plano); logs com
-`docker compose logs -f` e, para parar, `docker compose down`.
 
 **Sem Docker (desenvolvimento)** — requer .NET 10 SDK e Node 22:
 
@@ -49,7 +53,7 @@ dotnet test
 cd web && npm test
 ```
 
-**Configuração** (variáveis de ambiente, nenhuma é segredo):
+**Configuração** (variáveis de ambiente):
 
 | Variável | Padrão | Uso |
 |---|---|---|
@@ -64,7 +68,7 @@ cd web && npm test
 - **Concorrência**: escritas atômicas sem lock global e concorrência otimista com `ETag`/`If-Match`.
 - **Validação** com mensagens em pt-BR por campo, no formato `ProblemDetails` (RFC 9457) com código estável.
 - **Tela** que lista, busca, filtra, ordena, pagina, cria, edita e exclui, atualizando sozinha a cada 10 segundos.
-- **Docker** multi-stage, usuário não-root e healthcheck; **CI** no GitHub Actions; **211 testes** automatizados.
+- **Docker** multi-stage, usuário não-root e healthcheck; **CI** no GitHub Actions; **224 testes** automatizados (174 no .NET e 50 no front).
 
 ## Arquitetura
 
@@ -81,6 +85,8 @@ tests/                    Unitários (domínio, aplicação, concorrência) e de
 As dependências apontam para o domínio: `Api → Application → Domain` e `Infrastructure → Application`.
 Trocar a memória por um banco é escrever outro `IOrderRepository`, sem tocar em domínio ou casos de uso.
 
+### API
+
 | Método | Rota | Sucesso | Erros |
 |---|---|---|---|
 | GET | `/api/v1/orders?search=&status=&page=&pageSize=&sortBy=&sortDir=` | 200 | 400 |
@@ -88,6 +94,28 @@ Trocar a memória por um banco é escrever outro `IOrderRepository`, sem tocar e
 | POST | `/api/v1/orders` | 201 + `Location` + `ETag` | 400 |
 | PUT | `/api/v1/orders/{id}` (header `If-Match` opcional) | 200 + `ETag` | 400, 404, 409, 412 |
 | DELETE | `/api/v1/orders/{id}` (header `If-Match` opcional) | 204 | 404, 409, 412 |
+
+### Front-end
+
+```
+web/src/
+  main.tsx                Ponto de entrada
+  app/                    Composição da aplicação: App, providers, QueryClient
+  features/orders/        Tudo da funcionalidade de pedidos
+    index.ts              API pública da feature (o resto do app só importa daqui)
+    OrdersPage.tsx        Página que orquestra os componentes
+    api/                  Chamadas HTTP (ordersApi) e hooks do React Query (queries)
+    components/           Componentes da tela: tabela, toolbar, paginação, diálogos, formulário
+    hooks/                Hooks da feature (estado da listagem sincronizado com a URL)
+    model/                Tipos, regras de status e schema de validação do formulário
+  components/ui/          Componentes base do shadcn/ui, sem regra de negócio
+  hooks/                  Hooks genéricos reutilizáveis
+  lib/                    Utilitários compartilhados: cliente HTTP, formatação, erros, `cn`
+  styles/                 CSS global e tokens do Tailwind
+  test/                   setup.ts do Vitest + todos os testes, espelhando a estrutura de src/
+```
+
+Regras: `features/*` podem usar `components/ui`, `hooks` e `lib`, nunca o contrário; dentro da feature os imports são relativos, entre camadas usam o alias `@/`. Os testes ficam em `src/test/`, no mesmo caminho do arquivo testado (ex.: `lib/format.ts` → `test/lib/format.test.ts`) e importam via `@/`.
 
 ## Decisões
 
@@ -121,21 +149,20 @@ expõe detalhes internos.
 
 **Front.** React + TypeScript, TanStack Query (polling de 10 s mantendo os dados na tela, sem piscar),
 react-hook-form + zod (mesmas regras da API, e os erros da API aparecem no campo), Tailwind + shadcn/ui.
-Filtros e página ficam na URL. Ao salvar ou excluir, o front envia `If-Match`; em conflito, avisa e
+O valor é formatado em reais enquanto o usuário digita. Filtros e página ficam na URL. Ao salvar ou excluir, o front envia `If-Match`; em conflito, avisa e
 oferece recarregar sem perder o que foi digitado.
 
 **Hospedagem.** O front é servido pela própria API (mesma origem, sem CORS, um único container). Não é
 um BFF: a API é genérica e não há agregação nem autenticação. Se surgir login OAuth ou vários serviços,
 eu colocaria um BFF (YARP) guardando os tokens no servidor.
 
-**Experiência de quem avalia.** Quis que rodar o projeto fosse tão simples quanto usá-lo. Um container
-não consegue abrir o navegador da máquina, então criei scripts de inicialização (`start.cmd`/`start.ps1`
-no Windows e `start.sh` no Linux/macOS) que sobem o Docker, **esperam a aplicação ficar pronta de verdade**
-(consultando `/health/ready`, em vez de um `sleep` fixo que pode abrir a página antes da carga dos 10.000
-pedidos) e só então abrem a aplicação e a documentação da API. Alguns detalhes que evitam atrito: o
-`start.cmd` existe porque o Windows bloqueia scripts `.ps1` por padrão; o `.ps1` é salvo com BOM para os
-acentos aparecerem certos no PowerShell 5.1; e as mensagens de erro dizem o que fazer (abrir o Docker
-Desktop, ver os logs). No Visual Studio, o F5 abre direto a documentação da API.
+**Experiência de quem avalia.** Um container não abre o navegador da máquina, então criei
+`start.cmd`/`start.sh`, que:
+- sobem o Docker e **esperam a API ficar pronta de verdade** (consultam `/health/ready`, em vez de um `sleep` fixo);
+- só então abrem a aplicação e o Swagger;
+- evitam atritos do Windows: `.cmd` contorna o bloqueio de `.ps1`, e o BOM garante os acentos no PowerShell 5.1.
+
+No Visual Studio, o F5 abre direto o Swagger.
 
 **Docker e CI.** Imagem multi-stage (Node → SDK → runtime), usuário não-root, healthcheck usando o próprio
 binário. Os testes rodam no CI, não no build da imagem, para manter o `docker compose up` rápido.

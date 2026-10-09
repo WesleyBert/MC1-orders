@@ -8,10 +8,10 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   Cancelled: 'Cancelado',
 }
 
-export const STATUS_STYLES: Record<OrderStatus, string> = {
-  Open: 'bg-blue-100 text-blue-800',
-  Paid: 'bg-green-100 text-green-800',
-  Cancelled: 'bg-zinc-200 text-zinc-700',
+export const STATUS_STYLES: Record<OrderStatus, { badge: string; dot: string }> = {
+  Open: { badge: 'bg-blue-50 text-blue-700 ring-blue-600/20', dot: 'bg-blue-500' },
+  Paid: { badge: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', dot: 'bg-emerald-500' },
+  Cancelled: { badge: 'bg-zinc-100 text-zinc-600 ring-zinc-500/20', dot: 'bg-zinc-400' },
 }
 
 const ALLOWED_TARGETS: Record<OrderStatus, readonly OrderStatus[]> = {
