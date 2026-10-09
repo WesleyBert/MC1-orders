@@ -16,14 +16,6 @@ export interface Order {
   version: number
 }
 
-export interface PagedResponse<T> {
-  items: T[]
-  page: number
-  pageSize: number
-  totalItems: number
-  totalPages: number
-}
-
 export interface ListOrdersParams {
   search?: string
   status?: OrderStatus
@@ -41,15 +33,4 @@ export interface CreateOrderInput {
 
 export interface UpdateOrderInput extends CreateOrderInput {
   status: OrderStatus
-}
-
-export interface ProblemDetails {
-  type?: string
-  title?: string
-  status?: number
-  detail?: string
-  instance?: string
-  code?: string
-  traceId?: string
-  errors?: Record<string, string[]>
 }

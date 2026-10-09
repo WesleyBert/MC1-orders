@@ -1,5 +1,5 @@
 import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from 'lucide-react'
-import type { SortDirection, SortField } from '@/api/types'
+import type { SortDirection, SortField } from '../model/types'
 import { TableHead } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 

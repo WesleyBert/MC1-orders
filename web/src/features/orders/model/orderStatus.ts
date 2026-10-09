@@ -1,4 +1,4 @@
-import type { OrderStatus } from '@/api/types'
+import type { OrderStatus } from './types'
 
 export const ORDER_STATUSES: readonly OrderStatus[] = ['Open', 'Paid', 'Cancelled']
 

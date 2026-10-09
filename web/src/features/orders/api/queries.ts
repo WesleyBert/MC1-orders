@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createOrder, deleteOrder, getOrder, listOrders, updateOrder } from '@/api/orders'
-import type { CreateOrderInput, ListOrdersParams, Order, UpdateOrderInput } from '@/api/types'
+import { createOrder, deleteOrder, getOrder, listOrders, updateOrder } from './ordersApi'
+import type { CreateOrderInput, ListOrdersParams, Order, UpdateOrderInput } from '../model/types'
 
 export const REFRESH_INTERVAL_MS = 10_000
 

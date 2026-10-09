@@ -1,11 +1,6 @@
-import { request, toETag } from './http'
-import type {
-  CreateOrderInput,
-  ListOrdersParams,
-  Order,
-  PagedResponse,
-  UpdateOrderInput,
-} from './types'
+import { request, toETag } from '@/lib/http/client'
+import type { PagedResponse } from '@/lib/http/types'
+import type { CreateOrderInput, ListOrdersParams, Order, UpdateOrderInput } from '../model/types'
 
 const BASE = '/api/v1/orders'
 

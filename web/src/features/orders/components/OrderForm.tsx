@@ -1,15 +1,15 @@
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import type { Order, OrderStatus } from '@/api/types'
-import { ApiError } from '@/api/http'
+import type { Order, OrderStatus } from '../model/types'
+import { ApiError } from '@/lib/http/client'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { formatAmountInput } from '@/lib/format'
-import { isOrderFormField, orderFormSchema, type OrderFormValues } from './orderFormSchema'
-import { allowedTargets, STATUS_LABELS } from './orderStatus'
+import { formatAmountInput, maskAmountInput } from '@/lib/format'
+import { isOrderFormField, orderFormSchema, type OrderFormValues } from '../model/orderFormSchema'
+import { allowedTargets, STATUS_LABELS } from '../model/orderStatus'
 
 export const ORDER_FORM_ID = 'order-form'
 
@@ -86,16 +86,35 @@ export function OrderForm({ order, readOnly, serverError, onSubmit }: OrderFormP
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field id="totalAmount" label="Valor total (R$)" error={errors.totalAmount?.message}>
-          <Input
-            id="totalAmount"
-            inputMode="decimal"
-            placeholder="0,00"
-            autoComplete="off"
-            disabled={readOnly}
-            aria-invalid={errors.totalAmount ? true : undefined}
-            aria-describedby={errors.totalAmount ? 'totalAmount-error' : undefined}
-            {...register('totalAmount')}
+        <Field id="totalAmount" label="Valor total" error={errors.totalAmount?.message}>
+          <Controller
+            control={control}
+            name="totalAmount"
+            render={({ field }) => (
+              <div className="relative">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-sm text-muted-foreground"
+                >
+                  R$
+                </span>
+                <Input
+                  id="totalAmount"
+                  inputMode="numeric"
+                  placeholder="0,00"
+                  autoComplete="off"
+                  className="pl-9 text-right tabular-nums"
+                  disabled={readOnly}
+                  aria-invalid={errors.totalAmount ? true : undefined}
+                  aria-describedby={errors.totalAmount ? 'totalAmount-error' : undefined}
+                  name={field.name}
+                  ref={field.ref}
+                  value={field.value}
+                  onBlur={field.onBlur}
+                  onChange={(event) => field.onChange(maskAmountInput(event.target.value))}
+                />
+              </div>
+            )}
           />
         </Field>
 

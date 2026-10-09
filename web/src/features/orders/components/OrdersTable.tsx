@@ -1,10 +1,10 @@
 import { EyeIcon, PencilIcon, Trash2Icon } from 'lucide-react'
-import type { Order, SortDirection, SortField } from '@/api/types'
+import type { Order, SortDirection, SortField } from '../model/types'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatCurrency, formatDateTime, formatOrderNumber } from '@/lib/format'
-import { canDelete, isFinal } from './orderStatus'
+import { canDelete, isFinal } from '../model/orderStatus'
 import { SortableHead } from './SortableHead'
 import { StatusBadge } from './StatusBadge'
 

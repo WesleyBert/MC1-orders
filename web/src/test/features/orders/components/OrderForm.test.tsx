@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ApiError } from '@/api/http'
-import type { Order } from '@/api/types'
-import { ORDER_FORM_ID, OrderForm } from './OrderForm'
+import { ApiError } from '@/lib/http/client'
+import type { Order } from '@/features/orders/model/types'
+import { ORDER_FORM_ID, OrderForm } from '@/features/orders/components/OrderForm'
 
 const order: Order = {
   id: '0199c3a2-7f1e-7b6a-9d2e-4f5a6b7c8d9e',
@@ -47,7 +47,7 @@ describe('OrderForm', () => {
 
     await userEvent.type(screen.getByLabelText('Cliente'), 'Maria Souza')
     await userEvent.type(screen.getByLabelText('Descrição'), 'Pedido mensal')
-    await userEvent.type(screen.getByLabelText('Valor total (R$)'), '1.520,50')
+    await userEvent.type(screen.getByLabelText('Valor total'), '1.520,50')
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
@@ -56,6 +56,17 @@ describe('OrderForm', () => {
       description: 'Pedido mensal',
       totalAmount: '1.520,50',
     })
+  })
+
+  it('formata o valor em reais enquanto o usuário digita', async () => {
+    renderForm()
+    const amount = screen.getByLabelText('Valor total')
+
+    await userEvent.type(amount, '100000')
+    expect(amount).toHaveValue('1.000,00')
+
+    await userEvent.type(amount, '{Backspace}')
+    expect(amount).toHaveValue('100,00')
   })
 
   it('exibe abaixo do campo o erro devolvido pela API', async () => {
@@ -73,7 +84,7 @@ describe('OrderForm', () => {
     renderForm({ order: { ...order, status: 'Paid' }, readOnly: true })
 
     expect(screen.getByLabelText('Cliente')).toHaveValue('Maria Souza')
-    expect(screen.getByLabelText('Valor total (R$)')).toHaveValue('1.520,50')
+    expect(screen.getByLabelText('Valor total')).toHaveValue('1.520,50')
     expect(screen.getByLabelText('Cliente')).toBeDisabled()
     expect(screen.queryByLabelText('Status')).not.toBeInTheDocument()
   })

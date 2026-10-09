@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { ApiError, NetworkError } from '@/api/http'
+import { ApiError, NetworkError } from './http/client'
 
 export function errorMessage(error: unknown) {
   if (error instanceof ApiError || error instanceof NetworkError) {

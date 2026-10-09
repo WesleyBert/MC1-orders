@@ -2,7 +2,7 @@ import { ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon 
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatInteger } from '@/lib/format'
-import { PAGE_SIZES } from './useOrdersUrlState'
+import { PAGE_SIZES } from '../hooks/useOrdersUrlState'
 
 interface OrdersPaginationProps {
   page: number

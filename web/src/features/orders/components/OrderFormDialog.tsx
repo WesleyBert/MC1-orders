@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { RotateCwIcon, TriangleAlertIcon } from 'lucide-react'
-import { ApiError } from '@/api/http'
+import { ApiError } from '@/lib/http/client'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -9,9 +9,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { errorMessage, toastError } from '@/lib/errors'
 import { formatDateTime, formatOrderNumber, parseAmount } from '@/lib/format'
 import { ORDER_FORM_ID, OrderForm } from './OrderForm'
-import type { OrderFormValues } from './orderFormSchema'
-import { immutableMessage, isFinal, STATUS_LABELS } from './orderStatus'
-import { useCreateOrder, useOrder, useUpdateOrder } from './queries'
+import type { OrderFormValues } from '../model/orderFormSchema'
+import { immutableMessage, isFinal, STATUS_LABELS } from '../model/orderStatus'
+import { useCreateOrder, useOrder, useUpdateOrder } from '../api/queries'
 
 export type OrderDialogState = { mode: 'create' } | { mode: 'edit'; orderId: string }
 

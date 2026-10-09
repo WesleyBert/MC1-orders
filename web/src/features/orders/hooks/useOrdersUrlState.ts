@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { OrderStatus, SortDirection, SortField } from '@/api/types'
-import { ORDER_STATUSES } from './orderStatus'
+import type { OrderStatus, SortDirection, SortField } from '../model/types'
+import { ORDER_STATUSES } from '../model/orderStatus'
 
 export const PAGE_SIZES = [10, 20, 50] as const
 

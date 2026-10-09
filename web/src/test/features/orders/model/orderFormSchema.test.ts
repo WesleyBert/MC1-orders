@@ -1,4 +1,4 @@
-import { orderFormSchema, type OrderFormValues } from './orderFormSchema'
+import { orderFormSchema, type OrderFormValues } from '@/features/orders/model/orderFormSchema'
 
 const valid: OrderFormValues = {
   customerName: 'Maria Souza',

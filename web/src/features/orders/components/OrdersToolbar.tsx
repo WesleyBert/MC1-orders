@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { PlusIcon, SearchIcon } from 'lucide-react'
-import type { OrderStatus } from '@/api/types'
+import type { OrderStatus } from '../model/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useDebouncedValue } from '@/lib/useDebouncedValue'
-import { ORDER_STATUSES, STATUS_LABELS } from './orderStatus'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { ORDER_STATUSES, STATUS_LABELS } from '../model/orderStatus'
 
 const ALL = 'all'
 

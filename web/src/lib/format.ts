@@ -20,6 +20,13 @@ export const formatOrderNumber = (value: number) => `#${value}`
 
 export const formatAmountInput = (value: number) => amountInput.format(value)
 
+const MAX_AMOUNT_DIGITS = 11
+
+export function maskAmountInput(input: string) {
+  const digits = input.replace(/\D/g, '').replace(/^0+/, '').slice(0, MAX_AMOUNT_DIGITS)
+  return digits === '' ? '' : amountInput.format(Number(digits) / 100)
+}
+
 export function normalizeAmount(input: string): string | null {
   let value = input.trim().replace(/^R\$/, '').replace(/\s/g, '')
 

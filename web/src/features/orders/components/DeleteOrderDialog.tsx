@@ -1,6 +1,6 @@
 import { toast } from 'sonner'
-import type { Order } from '@/api/types'
-import { ApiError } from '@/api/http'
+import type { Order } from '../model/types'
+import { ApiError } from '@/lib/http/client'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { toastError } from '@/lib/errors'
 import { formatOrderNumber } from '@/lib/format'
-import { useDeleteOrder } from './queries'
+import { useDeleteOrder } from '../api/queries'
 
 interface DeleteOrderDialogProps {
   order: Order | null

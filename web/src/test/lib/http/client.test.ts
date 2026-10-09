@@ -1,4 +1,4 @@
-import { ApiError, NetworkError, request } from './http'
+import { ApiError, NetworkError, request } from '@/lib/http/client'
 
 function mockFetch(response: Response) {
   return vi.spyOn(globalThis, 'fetch').mockResolvedValue(response)

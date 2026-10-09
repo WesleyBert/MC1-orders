@@ -1,4 +1,4 @@
-import { formatCurrency, hasAtMostTwoDecimals, parseAmount } from './format'
+import { formatCurrency, hasAtMostTwoDecimals, maskAmountInput, parseAmount } from '@/lib/format'
 
 describe('parseAmount', () => {
   it.each([
@@ -30,5 +30,27 @@ describe('hasAtMostTwoDecimals', () => {
 describe('formatCurrency', () => {
   it('formata em reais', () => {
     expect(formatCurrency(1520.5).replace(/\s/g, ' ')).toBe('R$ 1.520,50')
+  })
+})
+
+describe('maskAmountInput', () => {
+  it.each([
+    ['1', '0,01'],
+    ['15', '0,15'],
+    ['1520', '15,20'],
+    ['100000', '1.000,00'],
+    ['1.520,5', '152,05'],
+    ['00012', '0,12'],
+    ['R$ 1a2b3', '1,23'],
+    ['', ''],
+    ['abc', ''],
+    ['000', ''],
+    ['999999999999999', '999.999.999,99'],
+  ])('formata "%s" como "%s"', (input, expected) => {
+    expect(maskAmountInput(input)).toBe(expected)
+  })
+
+  it('apagar o último caractere remove o último dígito', () => {
+    expect(maskAmountInput('1.000,0')).toBe('100,00')
   })
 })
