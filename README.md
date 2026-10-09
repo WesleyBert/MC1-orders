@@ -4,6 +4,9 @@ Desafio técnico para Desenvolvedor(a) Web .NET Pleno: API REST em ASP.NET Core 
 e execução com Docker. Persistência em memória, segura para requisições simultâneas, com 10.000 pedidos
 gerados na inicialização.
 
+<img width="1865" height="920" alt="image" src="https://github.com/user-attachments/assets/cf9ece02-6958-4a4b-9686-07090b8921f7" />
+
+
 ## Como rodar
 
 Pré-requisito: Docker (no Windows/macOS, com o Docker Desktop aberto).
