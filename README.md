@@ -18,13 +18,14 @@ docker compose up --build
 | http://localhost:8080/scalar/v1 | Documentação interativa da API (OpenAPI) |
 | http://localhost:8080/health/ready | Prontidão (responde após a carga inicial) |
 
-Atalho que sobe os containers, espera a aplicação ficar pronta e abre a aplicação e a documentação no navegador:
+**Atalho: sobe tudo e já abre a aplicação e a documentação no navegador**
 
 ```bash
-start.cmd
+.\start.cmd
 ```
 
-No Linux/macOS: `./start.sh`. Para parar: `docker compose down`.
+No Linux/macOS: `./start.sh`. O terminal fica livre (containers em segundo plano); logs com
+`docker compose logs -f` e, para parar, `docker compose down`.
 
 **Sem Docker (desenvolvimento)** — requer .NET 10 SDK e Node 22:
 
@@ -126,6 +127,15 @@ oferece recarregar sem perder o que foi digitado.
 **Hospedagem.** O front é servido pela própria API (mesma origem, sem CORS, um único container). Não é
 um BFF: a API é genérica e não há agregação nem autenticação. Se surgir login OAuth ou vários serviços,
 eu colocaria um BFF (YARP) guardando os tokens no servidor.
+
+**Experiência de quem avalia.** Quis que rodar o projeto fosse tão simples quanto usá-lo. Um container
+não consegue abrir o navegador da máquina, então criei scripts de inicialização (`start.cmd`/`start.ps1`
+no Windows e `start.sh` no Linux/macOS) que sobem o Docker, **esperam a aplicação ficar pronta de verdade**
+(consultando `/health/ready`, em vez de um `sleep` fixo que pode abrir a página antes da carga dos 10.000
+pedidos) e só então abrem a aplicação e a documentação da API. Alguns detalhes que evitam atrito: o
+`start.cmd` existe porque o Windows bloqueia scripts `.ps1` por padrão; o `.ps1` é salvo com BOM para os
+acentos aparecerem certos no PowerShell 5.1; e as mensagens de erro dizem o que fazer (abrir o Docker
+Desktop, ver os logs). No Visual Studio, o F5 abre direto a documentação da API.
 
 **Docker e CI.** Imagem multi-stage (Node → SDK → runtime), usuário não-root, healthcheck usando o próprio
 binário. Os testes rodam no CI, não no build da imagem, para manter o `docker compose up` rápido.
