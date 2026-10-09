@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Orders.Api.Configuration;
 using Orders.Api.Errors;
 using Orders.Api.Health;
+using Orders.Api.Http;
 
 namespace Orders.Api.Extensions;
 
@@ -10,6 +11,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<ApiOptions>().Bind(configuration.GetSection(ApiOptions.SectionName));
+        services.AddRouting(options => options.SetParameterPolicy<NotApiRouteConstraint>(NotApiRouteConstraint.Name));
 
         services.AddControllers()
             .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))

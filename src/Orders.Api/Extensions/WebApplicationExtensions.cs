@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Orders.Api.Configuration;
 using Orders.Api.Health;
+using Orders.Api.Http;
 using Orders.Api.Middleware;
 using Scalar.AspNetCore;
 
@@ -32,7 +33,7 @@ public static class WebApplicationExtensions
             app.MapScalarApiReference();
         }
 
-        app.MapFallbackToFile("{*path:regex(^(?!api/).*$)}", "index.html");
+        app.MapFallbackToFile($"{{*path:{NotApiRouteConstraint.Name}:nonfile}}", "index.html");
 
         return app;
     }
