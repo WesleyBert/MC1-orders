@@ -3,7 +3,7 @@ import { hasAtMostTwoDecimals, parseAmount } from '@/lib/format'
 
 const MAX_AMOUNT = 999_999_999.99
 
-export const CUSTOMER_NAME_MAX_LENGTH = 15
+export const CUSTOMER_NAME_MAX_LENGTH = 150
 export const DESCRIPTION_MAX_LENGTH = 500
 
 const customerNameLength = `O nome do cliente deve ter entre 2 e ${CUSTOMER_NAME_MAX_LENGTH} caracteres.`

@@ -35,14 +35,14 @@ public sealed class ValidatorTests
         var result = _create.Validate(new CreateOrderRequest("A", "", 10.999m));
 
         result.Errors.Select(e => e.ErrorMessage).Should().BeEquivalentTo(
-            "O nome do cliente deve ter entre 2 e 15 caracteres.",
+            "O nome do cliente deve ter entre 2 e 150 caracteres.",
             "A descrição é obrigatória.",
             "O valor total deve ter no máximo 2 casas decimais.");
     }
 
     [Theory]
     [InlineData("   ", "O nome do cliente é obrigatório.")]
-    [InlineData(" A ", "O nome do cliente deve ter entre 2 e 15 caracteres.")]
+    [InlineData(" A ", "O nome do cliente deve ter entre 2 e 150 caracteres.")]
     public void Create_CustomerName_IsTrimmedBeforeValidation(string name, string expected)
     {
         _create.Validate(new CreateOrderRequest(name, "Descrição válida", 10m))
@@ -52,9 +52,9 @@ public sealed class ValidatorTests
     [Fact]
     public void Create_CustomerNameAtMaxLength_Passes()
     {
-        _create.Validate(new CreateOrderRequest(new string('a', 15), "Descrição válida", 10m))
+        _create.Validate(new CreateOrderRequest(new string('a', 150), "Descrição válida", 10m))
             .IsValid.Should().BeTrue();
-        _create.Validate(new CreateOrderRequest(new string('a', 16), "Descrição válida", 10m))
+        _create.Validate(new CreateOrderRequest(new string('a', 151), "Descrição válida", 10m))
             .IsValid.Should().BeFalse();
     }
 

@@ -35,13 +35,13 @@ describe('OrderForm', () => {
     const customerName = screen.getByLabelText('Cliente')
     const description = screen.getByLabelText('Descrição')
 
-    expect(customerName).toHaveAttribute('maxLength', '15')
+    expect(customerName).toHaveAttribute('maxLength', '150')
     expect(description).toHaveAttribute('maxLength', '500')
-    expect(screen.getByText('0/15')).toBeInTheDocument()
+    expect(screen.getByText('0/150')).toBeInTheDocument()
 
     await userEvent.type(customerName, 'Maria')
 
-    expect(screen.getByText('5/15')).toBeInTheDocument()
+    expect(screen.getByText('5/150')).toBeInTheDocument()
     expect(screen.getByText('0/500')).toBeInTheDocument()
   })
 
@@ -93,12 +93,12 @@ describe('OrderForm', () => {
   it('exibe abaixo do campo o erro devolvido pela API', async () => {
     const serverError = new ApiError(400, {
       status: 400,
-      errors: { customerName: ['O nome do cliente deve ter entre 2 e 15 caracteres.'] },
+      errors: { customerName: ['O nome do cliente deve ter entre 2 e 150 caracteres.'] },
     })
 
     renderForm({ order, serverError })
 
-    expect(await screen.findByText('O nome do cliente deve ter entre 2 e 15 caracteres.')).toBeInTheDocument()
+    expect(await screen.findByText('O nome do cliente deve ter entre 2 e 150 caracteres.')).toBeInTheDocument()
   })
 
   it('preenche os campos ao editar e bloqueia em modo leitura', () => {
