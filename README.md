@@ -156,8 +156,9 @@ expõe detalhes internos.
 
 **Front.** React + TypeScript, TanStack Query (polling de 10 s mantendo os dados na tela, sem piscar),
 react-hook-form + zod (mesmas regras da API, e os erros da API aparecem no campo), Tailwind + shadcn/ui.
-O valor é formatado em reais enquanto o usuário digita. Filtros e página ficam na URL. Ao salvar ou excluir, o front envia `If-Match`; em conflito, avisa e
-oferece recarregar sem perder o que foi digitado.
+O valor é formatado em reais enquanto o usuário digita. Filtros e página ficam na URL. Ao salvar ou excluir, o
+front envia `If-Match`; em conflito, avisa sem descartar o que foi digitado e bloqueia o salvar até o usuário
+recarregar a versão atual, para ninguém sobrescrever a alteração de outra pessoa sem vê-la.
 
 Os cards de resumo (total, abertos, pagos e cancelados) vêm de uma única chamada (`/orders/summary`)
 e também funcionam como atalho de filtro. Clicar numa linha abre os detalhes do pedido, que acompanham a
