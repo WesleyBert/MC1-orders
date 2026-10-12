@@ -36,6 +36,17 @@ public sealed class PlatformTests(OrdersApiFactory factory) : IClassFixture<Orde
     }
 
     [Fact]
+    public async Task OpenApiDocument_DescribesStatusAsText()
+    {
+        var document = await (await _client.GetAsync(Url("/openapi/v1.json"))).JsonAsync();
+
+        var status = document.GetProperty("components").GetProperty("schemas").GetProperty("OrderStatus");
+
+        status.GetProperty("enum").EnumerateArray().Select(value => value.GetString())
+            .Should().BeEquivalentTo("Open", "Paid", "Cancelled");
+    }
+
+    [Fact]
     public async Task SwaggerUi_IsServedAndPointsToOpenApiDocument()
     {
         var response = await _client.GetAsync(Url("/swagger"));
