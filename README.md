@@ -58,6 +58,13 @@ dotnet test
 cd web && npm test
 ```
 
+**Testar a API pelo Postman:** importe o arquivo
+[`postman/MC1-Orders.postman_collection.json`](postman/MC1-Orders.postman_collection.json) e rode a
+collection inteira (botão direito → *Run collection*). São 34 chamadas, cobrindo os casos de sucesso e
+todos os erros tratados (400, 404, 405, 409, 412 e 415), inclusive duas pessoas editando o mesmo pedido.
+A collection cria os pedidos de que precisa e confere sozinha o código e a mensagem de cada resposta.
+O endereço padrão é `http://localhost:8080`; para mudar, altere a variável `baseUrl`.
+
 **Configuração** (variáveis de ambiente):
 
 | Variável | Padrão | Uso |

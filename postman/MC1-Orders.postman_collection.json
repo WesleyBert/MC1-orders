@@ -1,0 +1,1464 @@
+{
+  "info": {
+    "name": "MC1 Orders",
+    "description": "Testes da API de pedidos, incluindo todos os erros tratados.\n\nComo usar: suba o projeto (.\\start.cmd ou docker compose up --build) e rode a collection inteira pelo Collection Runner, na ordem. Ela cria os pedidos de que precisa, guarda os ids em variáveis e confere sozinha o código e a mensagem de cada resposta.\n\nSe a API estiver em outro endereço, altere a variável baseUrl.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "paidOrderId",
+      "value": ""
+    },
+    {
+      "key": "deleteOrderId",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (pm.response.code >= 400) {",
+          "    pm.test(\"Erro no formato padrão (application/problem+json)\", () =>",
+          "        pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\"));",
+          "    pm.test(\"Erro traz traceId para rastrear nos logs\", () =>",
+          "        pm.expect(pm.response.json().traceId).to.be.a(\"string\").and.not.empty);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Preparação",
+      "description": "Cria os pedidos usados nos testes seguintes e guarda os ids.",
+      "item": [
+        {
+          "name": "Criar pedido Aberto para os testes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (criado)\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Nasce Aberto, na versão 1\", () => {",
+                  "    const order = pm.response.json();",
+                  "    pm.expect(order.status).to.eql(\"Open\");",
+                  "    pm.expect(order.version).to.eql(1);",
+                  "});",
+                  "pm.test(\"Devolve ETag e Location\", () => {",
+                  "    pm.expect(pm.response.headers.get(\"ETag\")).to.eql('\"1\"');",
+                  "    pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/v1/orders/\");",
+                  "});",
+                  "pm.collectionVariables.set(\"orderId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria Souza\",\n  \"description\": \"Pedido criado pelo Postman\",\n  \"totalAmount\": 1520.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Criar pedido que será marcado como Pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (criado)\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"paidOrderId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria Souza\",\n  \"description\": \"Pedido que será pago\",\n  \"totalAmount\": 1520.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Marcar como Pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (atualizado)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Agora está Pago\", () => pm.expect(pm.response.json().status).to.eql(\"Paid\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "If-Match",
+                "value": "\"1\""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{paidOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{paidOrderId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria Souza\",\n  \"description\": \"Pedido que será pago\",\n  \"totalAmount\": 1520.5,\n  \"status\": \"Paid\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Listar (GET /orders)",
+      "description": "Listagem com busca, filtro, ordenação e paginação.",
+      "item": [
+        {
+          "name": "Sucesso - primeira página",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (ok)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Página 1 com 20 itens\", () => {",
+                  "    const page = pm.response.json();",
+                  "    pm.expect(page.page).to.eql(1);",
+                  "    pm.expect(page.items.length).to.eql(20);",
+                  "});",
+                  "pm.test(\"Status em texto (Open, Paid ou Cancelled)\", () =>",
+                  "    pm.expect([\"Open\", \"Paid\", \"Cancelled\"]).to.include(pm.response.json().items[0].status));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sucesso - busca sem acento (joao encontra João)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (ok)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Encontrou nomes com João\", () => {",
+                  "    const names = pm.response.json().items.map(o => o.customerName);",
+                  "    pm.expect(names.some(n => n.includes(\"João\"))).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders?search=joao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "joao"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sucesso - resumo por status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (ok)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Total é a soma dos status\", () => {",
+                  "    const s = pm.response.json();",
+                  "    pm.expect(s.total).to.eql(s.open + s.paid + s.cancelled);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "summary"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erro 400 - pageSize acima de 100",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (inválido)\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"code = request.validation\", () => pm.expect(pm.response.json().code).to.eql(\"request.validation\"));",
+                  "pm.test(\"Erro no campo pageSize\", () => pm.expect(pm.response.json().errors[\"pageSize\"]).to.include(\"O tamanho da página deve estar entre 1 e 100.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders?pageSize=500",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "pageSize",
+                  "value": "500"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erro 400 - página 0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (inválido)\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erro no campo page\", () => pm.expect(pm.response.json().errors[\"page\"]).to.include(\"A página deve ser maior ou igual a 1.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders?page=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erro 400 - página não numérica",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (inválido)\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erro no campo page\", () => pm.expect(pm.response.json().errors[\"page\"]).to.include(\"O valor informado é inválido.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders?page=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "abc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erro 400 - status que não existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (inválido)\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erro no campo status\", () => pm.expect(pm.response.json().errors[\"status\"]).to.include(\"Status inválido. Valores aceitos: Open, Paid, Cancelled.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders?status=Shipped",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "Shipped"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erro 400 - ordenação inválida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (inválido)\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erro em sortBy e sortDir\", () => {",
+                  "    const errors = pm.response.json().errors;",
+                  "    pm.expect(errors).to.have.property(\"sortBy\");",
+                  "    pm.expect(errors).to.have.property(\"sortDir\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders?sortBy=preco&sortDir=cima",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "preco"
+                },
+                {
+                  "key": "sortDir",
+                  "value": "cima"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Criar (POST /orders)",
+      "description": "A API recusa dados inválidos mesmo sem passar pela tela.",
+      "item": [
+        {
+          "name": "Erro 400 - campos vazios e valor zero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (inválido)\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"code = request.validation\", () => pm.expect(pm.response.json().code).to.eql(\"request.validation\"));",
+                  "pm.test(\"Erro no campo customerName\", () => pm.expect(pm.response.json().errors[\"customerName\"]).to.include(\"O nome do cliente é obrigatório.\"));",
+                  "pm.test(\"Erro no campo description\", () => pm.expect(pm.response.json().errors[\"description\"]).to.include(\"A descrição é obrigatória.\"));",
+                  "pm.test(\"Erro no campo totalAmount\", () => pm.expect(pm.response.json().errors[\"totalAmount\"]).to.include(\"O valor total deve ser maior que zero.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"\",\n  \"description\": \"\",\n  \"totalAmount\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Erro 400 - nome curto e valor com 3 casas decimais",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (inválido)\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erro no campo customerName\", () => pm.expect(pm.response.json().errors[\"customerName\"]).to.include(\"O nome do cliente deve ter entre 2 e 150 caracteres.\"));",
+                  "pm.test(\"Erro no campo totalAmount\", () => pm.expect(pm.response.json().errors[\"totalAmount\"]).to.include(\"O valor total deve ter no máximo 2 casas decimais.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"A\",\n  \"description\": \"Pedido teste\",\n  \"totalAmount\": 10.999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Erro 400 - valor acima do limite",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (inválido)\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erro no campo totalAmount\", () => pm.expect(pm.response.json().errors[\"totalAmount\"]).to.include(\"O valor total deve ser no máximo R$ 999.999.999,99.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria\",\n  \"description\": \"Pedido teste\",\n  \"totalAmount\": 1000000000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Erro 400 - sem o valor total",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (inválido)\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erro no campo totalAmount\", () => pm.expect(pm.response.json().errors[\"totalAmount\"]).to.include(\"O valor total é obrigatório.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria Souza\",\n  \"description\": \"Pedido teste\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Erro 400 - JSON quebrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (inválido)\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"code = request.malformed_json\", () => pm.expect(pm.response.json().code).to.eql(\"request.malformed_json\"));",
+                  "pm.test(\"Mensagem: O corpo da requisição não é um JSON válido.\", () => pm.expect(pm.response.json().detail).to.eql(\"O corpo da requisição não é um JSON válido.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"customerName\": \"Maria, \"description\": \"Pedido teste\", \"totalAmount\": 10 }"
+            }
+          }
+        },
+        {
+          "name": "Erro 415 - corpo que não é JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 415 (tipo não suportado)\", () => pm.response.to.have.status(415));",
+                  "pm.test(\"code = request.unsupported_media_type\", () => pm.expect(pm.response.json().code).to.eql(\"request.unsupported_media_type\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "customerName=Maria"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Obter (GET /orders/{id})",
+      "description": "",
+      "item": [
+        {
+          "name": "Sucesso - pedido existente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (ok)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ETag com a versão\", () => pm.expect(pm.response.headers.get(\"ETag\")).to.eql('\"1\"'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{orderId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erro 404 - pedido que não existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (não encontrado)\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"code = order.not_found\", () => pm.expect(pm.response.json().code).to.eql(\"order.not_found\"));",
+                  "pm.test(\"Mensagem: Pedido não encontrado.\", () => pm.expect(pm.response.json().detail).to.eql(\"Pedido não encontrado.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Atualizar (PUT /orders/{id})",
+      "description": "Rode na ordem. Simula duas pessoas editando o mesmo pedido e as regras de status.",
+      "item": [
+        {
+          "name": "Sucesso - alterar com If-Match \"1\"",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (atualizado)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Versão passou para 2\", () => pm.expect(pm.response.json().version).to.eql(2));",
+                  "pm.test(\"Novo ETag\", () => pm.expect(pm.response.headers.get(\"ETag\")).to.eql('\"2\"'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "If-Match",
+                "value": "\"1\""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{orderId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria Souza\",\n  \"description\": \"Primeira alteração\",\n  \"totalAmount\": 100,\n  \"status\": \"Open\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Erro 412 - outra pessoa já alterou (If-Match antigo)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 412 (versão desatualizada)\", () => pm.response.to.have.status(412));",
+                  "pm.test(\"code = order.concurrency_conflict\", () => pm.expect(pm.response.json().code).to.eql(\"order.concurrency_conflict\"));",
+                  "pm.test(\"Mensagem: Este pedido foi alterado por outra pessoa. Recarregue os dados e tente novamente.\", () => pm.expect(pm.response.json().detail).to.eql(\"Este pedido foi alterado por outra pessoa. Recarregue os dados e tente novamente.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "If-Match",
+                "value": "\"1\""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{orderId}}"
+              ]
+            },
+            "description": "Simula a segunda pessoa, que abriu o pedido na versão 1 e tenta salvar depois da primeira.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria Souza\",\n  \"description\": \"Segunda pessoa, com versão antiga\",\n  \"totalAmount\": 200,\n  \"status\": \"Open\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Erro 400 - status que não existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (inválido)\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erro no campo status\", () => pm.expect(pm.response.json().errors[\"status\"]).to.include(\"Status inválido. Valores aceitos: Open, Paid, Cancelled.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{orderId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria Souza\",\n  \"description\": \"Pedido teste\",\n  \"totalAmount\": 1520.5,\n  \"status\": \"Enviado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Erro 400 - If-Match em formato errado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 (inválido)\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Erro no cabeçalho If-Match\", () =>",
+                  "    pm.expect(pm.response.json().errors).to.have.property(\"If-Match\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "If-Match",
+                "value": "abc"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{orderId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria Souza\",\n  \"description\": \"Pedido teste\",\n  \"totalAmount\": 1520.5,\n  \"status\": \"Open\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Sucesso - marcar como Pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (atualizado)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Agora está Pago\", () => pm.expect(pm.response.json().status).to.eql(\"Paid\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{orderId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria Souza\",\n  \"description\": \"Pedido pago\",\n  \"totalAmount\": 100,\n  \"status\": \"Paid\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Erro 409 - tentar reabrir pedido pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (conflito)\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"code = order.immutable_state\", () => pm.expect(pm.response.json().code).to.eql(\"order.immutable_state\"));",
+                  "pm.test(\"Mensagem: Pedidos com status Pago não podem ser alterados.\", () => pm.expect(pm.response.json().detail).to.eql(\"Pedidos com status Pago não podem ser alterados.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{orderId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria Souza\",\n  \"description\": \"Tentando reabrir\",\n  \"totalAmount\": 100,\n  \"status\": \"Open\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Erro 404 - pedido que não existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (não encontrado)\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"code = order.not_found\", () => pm.expect(pm.response.json().code).to.eql(\"order.not_found\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria Souza\",\n  \"description\": \"Pedido teste\",\n  \"totalAmount\": 1520.5,\n  \"status\": \"Open\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Excluir (DELETE /orders/{id})",
+      "description": "Rode na ordem.",
+      "item": [
+        {
+          "name": "Erro 409 - excluir pedido pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409 (conflito)\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"code = order.delete_not_allowed\", () => pm.expect(pm.response.json().code).to.eql(\"order.delete_not_allowed\"));",
+                  "pm.test(\"Mensagem: Pedidos pagos não podem ser excluídos.\", () => pm.expect(pm.response.json().detail).to.eql(\"Pedidos pagos não podem ser excluídos.\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{paidOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{paidOrderId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Preparar - criar pedido para excluir",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 (criado)\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"deleteOrderId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Maria Souza\",\n  \"description\": \"Pedido que será excluído\",\n  \"totalAmount\": 1520.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Erro 412 - If-Match desatualizado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 412 (versão desatualizada)\", () => pm.response.to.have.status(412));",
+                  "pm.test(\"code = order.concurrency_conflict\", () => pm.expect(pm.response.json().code).to.eql(\"order.concurrency_conflict\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "If-Match",
+                "value": "\"99\""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{deleteOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{deleteOrderId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sucesso - excluir",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204 (excluído)\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "If-Match",
+                "value": "\"1\""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{deleteOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{deleteOrderId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erro 404 - excluir de novo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (não encontrado)\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"code = order.not_found\", () => pm.expect(pm.response.json().code).to.eql(\"order.not_found\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{deleteOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{deleteOrderId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Plataforma",
+      "description": "Saúde do sistema e rotas que não existem.",
+      "item": [
+        {
+          "name": "Sucesso - sistema pronto (health check)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 (ok)\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Healthy\", () => pm.expect(pm.response.text()).to.eql(\"Healthy\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/ready",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "ready"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erro 404 - rota da API que não existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 (não encontrado)\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"code = resource.not_found\", () => pm.expect(pm.response.json().code).to.eql(\"resource.not_found\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/naoexiste",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "naoexiste"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Erro 405 - método não permitido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 405 (método não permitido)\", () => pm.response.to.have.status(405));",
+                  "pm.test(\"code = request.method_not_allowed\", () => pm.expect(pm.response.json().code).to.eql(\"request.method_not_allowed\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
