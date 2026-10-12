@@ -65,6 +65,23 @@ todos os erros tratados (400, 404, 405, 409, 412 e 415), inclusive duas pessoas 
 A collection cria os pedidos de que precisa e confere sozinha o código e a mensagem de cada resposta.
 O endereço padrão é `http://localhost:8080`; para mudar, altere a variável `baseUrl`.
 
+**Testes de ponta a ponta e de carga** (precisa de Docker e Node 22), na pasta `qa`:
+
+```powershell
+.\rodar-testes.cmd
+```
+
+Em uns 2 minutos, sobe o sistema, mostra o navegador executando os cenários, abre os gráficos de carga ao
+vivo e, no fim, abre `qa/reports/index.html` com o resumo e os relatórios. Use `-rapido` para rodar sem
+abrir nada na tela.
+
+- **Playwright:** um navegador de verdade usando a tela em 6 cenários: busca e filtros, cadastro com
+  validação, duas pessoas editando o mesmo pedido em dois navegadores, atualização automática sem
+  recarregar, pedido pago bloqueado e exclusão. Grava vídeo e prints de cada passo.
+- **k6:** até 105 usuários ao mesmo tempo por cerca de 1 minuto (navegando, cadastrando e salvando o
+  mesmo pedido juntos). Só passa com menos de 1% de erros, 95% das respostas abaixo de 300 ms e nenhuma
+  gravação perdida.
+
 **Configuração** (variáveis de ambiente):
 
 | Variável | Padrão | Uso |
